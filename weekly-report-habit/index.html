@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>주간 보고 습관 트래커</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  padding: 20px;
+  color: #333;
+}
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  overflow: hidden;
+}
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  padding: 30px;
+  text-align: center;
+}
+.header h1 { font-size: 1.8em; margin-bottom: 10px; }
+.header p { opacity: 0.9; font-size: 0.95em; }
+.streak-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 8px 16px;
+  border-radius: 20px;
+  margin-top: 15px;
+  font-size: 1.1em;
+  font-weight: bold;
+}
+.content { padding: 30px; }
+.section {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border-left: 4px solid #667eea;
+}
+.section h2 {
+  font-size: 1.2em;
+  margin-bottom: 15px;
+  color: #667eea;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section h2 .icon { font-size: 1.3em; }
+.form-group { margin-bottom: 15px; }
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 0.9em;
+  color: #555;
+}
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1em;
+  transition: border-color 0.3s;
+  font-family: inherit;
+}
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+.form-group textarea { resize: vertical; min-height: 80px; }
+.progress-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.progress-container input[type="range"] {
+  flex: 1;
+  height: 8px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #e0e0e0;
+  border-radius: 4px;
+  outline: none;
+}
+.progress-container input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  background: #667eea;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(102,126,234,0.4);
+}
+.progress-value {
+  font-size: 1.3em;
+  font-weight: bold;
+  color: #667eea;
+  min-width: 60px;
+  text-align: center;
+}
+.progress-bar {
+  width: 100%;
+  height: 20px;
+  background: #e0e0e0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 10px;
+  transition: width 0.5s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.8em;
+  font-weight: bold;
+}
+.radio-group, .checkbox-group {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+.radio-group label, .checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-weight: normal;
+}
+.btn {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: inherit;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  width: 100%;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102,126,234,0.4); }
+.btn-secondary {
+  background: #e0e0e0;
+  color: #333;
+}
+.btn-secondary:hover { background: #d0d0d0; }
+.btn-success {
+  background: #28a745;
+  color: #fff;
+}
+.btn-success:hover { background: #218838; }
+.btn-group { display: flex; gap: 10px; margin-top: 20px; }
+.btn-group .btn { flex: 1; }
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+}
+.stat-card .stat-value { font-size: 2em; font-weight: bold; margin-bottom: 5px; }
+.stat-card .stat-label { font-size: 0.85em; opacity: 0.9; }
+.preview-box {
+  background: #fff;
+  border: 2px dashed #667eea;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 15px;
+  white-space: pre-wrap;
+  font-size: 0.95em;
+  line-height: 1.6;
+}
+.question-item {
+  background: #fff;
+  padding: 12px 15px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border-left: 3px solid #667eea;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.question-item .category {
+  font-size: 0.75em;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: #e8eaff;
+  color: #667eea;
+}
+.history-item {
+  background: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #e0e0e0;
+}
+.history-item .history-date {
+  font-size: 0.8em;
+  color: #888;
+  margin-bottom: 5px;
+}
+.history-item .history-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.history-item .progress-bar { flex: 1; margin-top: 0; height: 12px; }
+.notification-permission {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.notification-permission p { font-size: 0.9em; color: #856404; }
+.empty-state {
+  text-align: center;
+  padding: 30px;
+  color: #888;
+  font-size: 0.95em;
+}
+.empty-state .empty-icon { font-size: 3em; margin-bottom: 10px; }
+.tabs {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 10px;
+  flex-wrap: wrap;
+}
+.tab {
+  padding: 10px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.95em;
+  font-weight: 600;
+  color: #888;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.3s;
+  font-family: inherit;
+}
+.tab.active {
+  color: #667eea;
+  background: #f0f0ff;
+}
+.tab:hover { color: #667eea; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.export-area {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 15px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85em;
+  white-space: pre-wrap;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+}
+/* Daily task styles */
+.daily-task-item {
+  background: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.daily-task-item.completed {
+  opacity: 0.6;
+  background: #f0f0f0;
+}
+.daily-task-item.completed .task-text {
+  text-decoration: line-through;
+  color: #888;
+}
+.daily-task-item input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+.daily-task-item .task-text {
+  flex: 1;
+  font-size: 0.95em;
+}
+.daily-task-item .task-actions {
+  display: flex;
+  gap: 5px;
+}
+.daily-task-item .task-actions button {
+  padding: 6px 10px;
+  font-size: 0.8em;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.daily-task-item .btn-postpone {
+  background: #ffc107;
+  color: #333;
+}
+.daily-task-item .btn-postpone:hover { background: #e0a800; }
+.daily-task-item .btn-delete {
+  background: #dc3545;
+  color: #fff;
+}
+.daily-task-item .btn-delete:hover { background: #c82333; }
+.daily-summary {
+  background: #e8f5e9;
+  border: 1px solid #4caf50;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+.daily-summary h3 {
+  color: #2e7d32;
+  margin-bottom: 10px;
+  font-size: 1em;
+}
+.daily-summary .summary-content {
+  font-size: 0.9em;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.weekly-auto-report {
+  background: #e3f2fd;
+  border: 2px solid #2196f3;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.weekly-auto-report h3 {
+  color: #1565c0;
+  margin-bottom: 15px;
+  font-size: 1.1em;
+}
+.weekly-auto-report .report-content {
+  background: #fff;
+  border-radius: 8px;
+  padding: 15px;
+  font-size: 0.9em;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.tab-daily { border-left-color: #28a745; }
+.tab-daily h2 { color: #28a745; }
+@media (max-width: 600px) {
+  body { padding: 10px; }
+  .header { padding: 20px; }
+  .header h1 { font-size: 1.4em; }
+  .content { padding: 20px; }
+  .section { padding: 15px; }
+  .dashboard { grid-template-columns: 1fr 1fr; }
+  .btn-group { flex-direction: column; }
+  .progress-container { flex-direction: column; align-items: stretch; }
+  .tabs { flex-wrap: wrap; }
+  .tab { padding: 8px 12px; font-size: 0.85em; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📋 주간 보고 습관 트래커</h1>
+    <p>매일 5분 업무 정리 → 주간 보고서 자동 생성!</p>
+    <div class="streak-badge" id="streakBadge">🔥 연속 보고: 0주</div>
+    <div class="streak-badge" id="dailyStreakBadge" style="background: rgba(40,167,69,0.3);">📅 연속 일일: 0일</div>
+  </div>
+  
+  <div class="content">
+    <div class="notification-permission" id="notifPermission" style="display: none;">
+      <p>🔔 매주 월요일 오전 9시에 알림을 받으려면 권한을 허용해주세요.</p>
+      <button class="btn btn-primary" style="width: auto; padding: 8px 16px;" onclick="requestNotificationPermission()">알림 허용</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('daily', this)">📅 일일 업무</button>
+      <button class="tab" onclick="switchTab('input', this)">📝 보고서 작성</button>
+      <button class="tab" onclick="switchTab('dashboard', this)">📊 대시보드</button>
+      <button class="tab" onclick="switchTab('history', this)">📜 기록</button>
+      <button class="tab" onclick="switchTab('export', this)">📤 내보내기</button>
+    </div>
+
+    <!-- 일일 업무 탭 -->
+    <div id="tab-daily" class="tab-content active">
+      <div class="section tab-daily">
+        <h2><span class="icon">📅</span> 오늘 할 일 (3개)</h2>
+        <div class="form-group">
+          <label>할 일 입력</label>
+          <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <input type="text" id="dailyTaskInput" placeholder="할 일을 입력하세요" style="flex: 1;" onkeypress="if(event.key==='Enter')addDailyTask()">
+            <button class="btn btn-primary" style="width: auto;" onclick="addDailyTask()">추가</button>
+          </div>
+        </div>
+        <div id="dailyTasksList">
+          <div class="empty-state">
+            <div class="empty-icon">📝</div>
+            <p>오늘 할 일을 추가하세요!</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section tab-daily">
+        <h2><span class="icon">🚧</span> 오늘 막힌 곳</h2>
+        <div class="form-group">
+          <textarea id="dailyBlockers" placeholder="오늘 막힌 곳이 있다면 기록하세요" rows="3"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="saveDailyRecord()">💾 오늘 기록 저장</button>
+      </div>
+
+      <div class="section tab-daily">
+        <h2><span class="icon">📊</span> 이번 주 일일 기록</h2>
+        <div id="weeklyDailyRecords">
+          <div class="empty-state">
+            <div class="empty-icon">📊</div>
+            <p>이번 주 일일 기록이 여기에 표시됩니다.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="weekly-auto-report" id="weeklyAutoReportSection" style="display: none;">
+        <h3>🤖 자동 생성된 주간 보고서</h3>
+        <p style="font-size: 0.85em; color: #666; margin-bottom: 10px;">월~금 일일 기록을 바탕으로 자동 생성되었습니다. 복사해서 사용하세요!</p>
+        <div class="report-content" id="weeklyAutoReport"></div>
+        <button class="btn btn-success" style="margin-top: 10px;" onclick="copyWeeklyAutoReport()">📋 주간 보고서 복사</button>
+      </div>
+    </div>
+
+    <!-- 보고서 작성 탭 -->
+    <div id="tab-input" class="tab-content">
+      <div class="section">
+        <h2><span class="icon">📌</span> 이번 주 진행 상황</h2>
+        <div class="form-group">
+          <label>지금 하고 있는 일 (3줄 이상 권장)</label>
+          <textarea id="currentWork" placeholder="예: &#10;1. 프로젝트 A 요구사항 분석 완료&#10;2. 데이터베이스 설계 진행 중&#10;3. API 명세서 작성 중"></textarea>
+        </div>
+        <div class="form-group">
+          <label>진행률</label>
+          <div class="progress-container">
+            <input type="range" id="progressRange" min="0" max="100" value="0" oninput="updateProgress(this.value)">
+            <span class="progress-value" id="progressText">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-bar-fill" id="progressBar" style="width: 0%">0%</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>막힌 곳 (있으면 입력)</label>
+          <textarea id="blockers" placeholder="예: 디자인 시안이 아직 나오지 않아 화면 구현을 시작할 수 없습니다."></textarea>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2><span class="icon">❓</span> 질문 준비</h2>
+        <div class="form-group">
+          <label>과장/대리에게 물어볼 질문 (1개 이상)</label>
+          <div id="questionsContainer">
+            <div class="question-input-group" style="margin-bottom: 10px;">
+              <input type="text" class="question-input" placeholder="질문을 입력하세요" style="width: 70%; display: inline-block;">
+              <select class="question-category" style="width: 28%; display: inline-block; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                <option value="업무 방법">업무 방법</option>
+                <option value="우선순위">우선순위</option>
+                <option value="기타">기타</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-secondary" style="margin-top: 10px;" onclick="addQuestionField()">+ 질문 추가</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2><span class="icon">🔄</span> 지난주 회고</h2>
+        <div class="form-group">
+          <label>지난주 질문에 대한 답변을 받았나요?</label>
+          <div class="radio-group">
+            <label><input type="radio" name="gotAnswer" value="예"> 예</label>
+            <label><input type="radio" name="gotAnswer" value="아니오"> 아니오</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>도움이 되었나요? (1~5점)</label>
+          <div class="radio-group">
+            <label><input type="radio" name="helpful" value="1"> 1점</label>
+            <label><input type="radio" name="helpful" value="2"> 2점</label>
+            <label><input type="radio" name="helpful" value="3"> 3점</label>
+            <label><input type="radio" name="helpful" value="4"> 4점</label>
+            <label><input type="radio" name="helpful" value="5"> 5점</label>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveReport()">💾 보고서 저장</button>
+    </div>
+
+    <!-- 대시보드 탭 -->
+    <div id="tab-dashboard" class="tab-content">
+      <div class="dashboard">
+        <div class="stat-card">
+          <div class="stat-value" id="statStreak">0</div>
+          <div class="stat-label">연속 보고 (주)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-label">총 보고서 수</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statAvgProgress">0%</div>
+          <div class="stat-label">평균 진행률</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statQuestions">0</div>
+          <div class="stat-label">총 질문 수</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2><span class="icon">📄</span> 이번 주 보고서 미리보기</h2>
+        <div id="currentPreview">
+          <div class="empty-state">
+            <div class="empty-icon">📝</div>
+            <p>아직 이번 주 보고서가 없습니다.<br>보고서를 작성해주세요!</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2><span class="icon">📈</span> 지난주 대비 변화</h2>
+        <div id="weekComparison">
+          <div class="empty-state">
+            <div class="empty-icon">📊</div>
+            <p>비교할 데이터가 없습니다.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2><span class="icon">👔</span> 팀장용 요약</h2>
+        <div id="managerSummary">
+          <div class="empty-state">
+            <div class="empty-icon">👔</div>
+            <p>팀장용 요약이 여기에 표시됩니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 기록 탭 -->
+    <div id="tab-history" class="tab-content">
+      <div class="section">
+        <h2><span class="icon">📜</span> 전체 기록</h2>
+        <div id="historyList">
+          <div class="empty-state">
+            <div class="empty-icon">📜</div>
+            <p>아직 기록이 없습니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 내보내기 탭 -->
+    <div id="tab-export" class="tab-content">
+      <div class="section">
+        <h2><span class="icon">📤</span> 데이터 내보내기</h2>
+        <p style="margin-bottom: 15px; color: #666; font-size: 0.9em;">팀장이 복사할 수 있는 텍스트 형식으로 내보냅니다.</p>
+        <div class="btn-group">
+          <button class="btn btn-success" onclick="exportData('summary')">📋 요약 내보내기</button>
+          <button class="btn btn-success" onclick="exportData('full')">📄 전체 내보내기</button>
+        </div>
+        <div class="export-area" id="exportArea">내보내기 버튼을 클릭하면 여기에 텍스트가 표시됩니다.</div>
+        <button class="btn btn-primary" style="margin-top: 15px;" onclick="copyExport()">📋 복사하기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'weeklyReportHabit';
+const DAILY_STORAGE_KEY = 'dailyReportHabit';
+let reports = [];
+let dailyRecords = [];
+let currentExportText = '';
+let weeklyAutoReportText = '';
+
+// 초기화
+function init() {
+  loadData();
+  loadDailyData();
+  updateStreak();
+  updateDailyStreak();
+  checkNotificationPermission();
+  renderDashboard();
+  renderHistory();
+  updatePreview();
+  renderDailyTasks();
+  renderWeeklyDailyRecords();
+  generateWeeklyAutoReport();
+}
+
+// 데이터 로드
+function loadData() {
+  const data = localStorage.getItem(STORAGE_KEY);
+  if (data) {
+    try {
+      reports = JSON.parse(data);
+    } catch (e) {
+      reports = [];
+    }
+  }
+}
+
+// 일일 데이터 로드
+function loadDailyData() {
+  const data = localStorage.getItem(DAILY_STORAGE_KEY);
+  if (data) {
+    try {
+      dailyRecords = JSON.parse(data);
+    } catch (e) {
+      dailyRecords = [];
+    }
+  }
+}
+
+// 데이터 저장
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+}
+
+// 일일 데이터 저장
+function saveDailyData() {
+  localStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify(dailyRecords));
+}
+
+// 진행률 업데이트
+function updateProgress(value) {
+  document.getElementById('progressText').textContent = value + '%';
+  const bar = document.getElementById('progressBar');
+  bar.style.width = value + '%';
+  bar.textContent = value + '%';
+}
+
+// 탭 전환
+function switchTab(tabName, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + tabName).classList.add('active');
+  
+  if (tabName === 'dashboard') renderDashboard();
+  if (tabName === 'history') renderHistory();
+  if (tabName === 'daily') {
+    renderDailyTasks();
+    renderWeeklyDailyRecords();
+    generateWeeklyAutoReport();
+  }
+}
+
+// 일일 업무 추가
+function addDailyTask() {
+  const input = document.getElementById('dailyTaskInput');
+  const text = input.value.trim();
+  if (!text) return;
+  
+  const today = getTodayKey();
+  let todayRecord = dailyRecords.find(r => r.dateKey === today);
+  
+  if (!todayRecord) {
+    todayRecord = {
+      dateKey: today,
+      date: new Date().toISOString(),
+      dateStr: formatDate(new Date()),
+      tasks: [],
+      blockers: ''
+    };
+    dailyRecords.push(todayRecord);
+  }
+  
+  todayRecord.tasks.push({
+    id: Date.now(),
+    text: text,
+    completed: false,
+    postponed: false
+  });
+  
+  input.value = '';
+  saveDailyData();
+  renderDailyTasks();
+  updateDailyStreak();
+}
+
+// 할 일 완료 토글
+function toggleDailyTask(taskId) {
+  const today = getTodayKey();
+  const todayRecord = dailyRecords.find(r => r.dateKey === today);
+  if (!todayRecord) return;
+  
+  const task = todayRecord.tasks.find(t => t.id === taskId);
+  if (task) {
+    task.completed = !task.completed;
+    saveDailyData();
+    renderDailyTasks();
+  }
+}
+
+// 할 일 미루기
+function postponeTask(taskId) {
+  const today = getTodayKey();
+  const todayRecord = dailyRecords.find(r => r.dateKey === today);
+  if (!todayRecord) return;
+  
+  const task = todayRecord.tasks.find(t => t.id === taskId);
+  if (task) {
+    task.postponed = true;
+    task.completed = false;
+    
+    // 내일 기록에 추가
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowKey = getTomorrowKey();
+    let tomorrowRecord = dailyRecords.find(r => r.dateKey === tomorrowKey);
+    
+    if (!tomorrowRecord) {
+      tomorrowRecord = {
+        dateKey: tomorrowKey,
+        date: tomorrow.toISOString(),
+        dateStr: formatDate(tomorrow),
+        tasks: [],
+        blockers: ''
+      };
+      dailyRecords.push(tomorrowRecord);
+    }
+    
+    tomorrowRecord.tasks.push({
+      id: Date.now(),
+      text: task.text,
+      completed: false,
+      postponed: true
+    });
+    
+    saveDailyData();
+    renderDailyTasks();
+    alert('✅ 내일로 미뤘습니다!');
+  }
+}
+
+// 할 일 삭제
+function deleteDailyTask(taskId) {
+  if (!confirm('이 할 일을 삭제하시겠습니까?')) return;
+  
+  const today = getTodayKey();
+  const todayRecord = dailyRecords.find(r => r.dateKey === today);
+  if (!todayRecord) return;
+  
+  todayRecord.tasks = todayRecord.tasks.filter(t => t.id !== taskId);
+  saveDailyData();
+  renderDailyTasks();
+}
+
+// 일일 기록 저장
+function saveDailyRecord() {
+  const today = getTodayKey();
+  const blockers = document.getElementById('dailyBlockers').value.trim();
+  
+  let todayRecord = dailyRecords.find(r => r.dateKey === today);
+  if (!todayRecord) {
+    todayRecord = {
+      dateKey: today,
+      date: new Date().toISOString(),
+      dateStr: formatDate(new Date()),
+      tasks: [],
+      blockers: ''
+    };
+    dailyRecords.push(todayRecord);
+  }
+  
+  todayRecord.blockers = blockers;
+  saveDailyData();
+  updateDailyStreak();
+  renderWeeklyDailyRecords();
+  generateWeeklyAutoReport();
+  alert('✅ 오늘 기록이 저장되었습니다!');
+}
+
+// 일일 업무 렌더링
+function renderDailyTasks() {
+  const container = document.getElementById('dailyTasksList');
+  const today = getTodayKey();
+  const todayRecord = dailyRecords.find(r => r.dateKey === today);
+  
+  if (!todayRecord || todayRecord.tasks.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><p>오늘 할 일을 추가하세요!</p></div>';
+    return;
+  }
+  
+  const activeTasks = todayRecord.tasks.filter(t => !t.postponed);
+  
+  if (activeTasks.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><p>오늘 할 일을 모두 완료했습니다!</p></div>';
+    return;
+  }
+  
+  container.innerHTML = activeTasks.map(task => `
+    <div class="daily-task-item ${task.completed ? 'completed' : ''}">
+      <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleDailyTask(${task.id})">
+      <span class="task-text">${escapeHtml(task.text)}</span>
+      <div class="task-actions">
+        <button class="btn-postpone" onclick="postponeTask(${task.id})">미루기</button>
+        <button class="btn-delete" onclick="deleteDailyTask(${task.id})">삭제</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// 주간 일일 기록 렌더링
+function renderWeeklyDailyRecords() {
+  const container = document.getElementById('weeklyDailyRecords');
+  const currentWeek = getWeekKey(new Date());
+  
+  const weekRecords = dailyRecords.filter(r => {
+    const recordWeek = getWeekKey(new Date(r.date));
+    return recordWeek === currentWeek;
+  }).sort((a, b) => new Date(a.date) - new Date(b.date));
+  
+  if (weekRecords.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><p>이번 주 일일 기록이 여기에 표시됩니다.</p></div>';
+    return;
+  }
+  
+  container.innerHTML = weekRecords.map(r => {
+    const completed = r.tasks.filter(t => t.completed).length;
+    const total = r.tasks.length;
+    const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+    
+    return `
+      <div class="history-item">
+        <div class="history-date">📅 ${r.dateStr}</div>
+        <div><strong>완료:</strong> ${completed}/${total} 개</div>
+        <div class="history-progress">
+          <div class="progress-bar">
+            <div class="progress-bar-fill" style="width: ${progress}%">${progress}%</div>
+          </div>
+        </div>
+        ${r.blockers ? `<div style="margin-top: 5px; font-size: 0.9em; color: #dc3545;"><strong>🚧 막힌 곳:</strong> ${escapeHtml(r.blockers)}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+// 주간 보고서 자동 생성
+function generateWeeklyAutoReport() {
+  const currentWeek = getWeekKey(new Date());
+  const weekRecords = dailyRecords.filter(r => {
+    const recordWeek = getWeekKey(new Date(r.date));
+    return recordWeek === currentWeek;
+  }).sort((a, b) => new Date(a.date) - new Date(b.date));
+  
+  const section = document.getElementById('weeklyAutoReportSection');
+  const content = document.getElementById('weeklyAutoReport');
+  
+  if (weekRecords.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  
+  section.style.display = 'block';
+  
+  let totalTasks = 0;
+  let completedTasks = 0;
+  let allBlockers = [];
+  let dailySummaries = [];
+  
+  weekRecords.forEach(r => {
+    const completed = r.tasks.filter(t => t.completed).length;
+    totalTasks += r.tasks.length;
+    completedTasks += completed;
+    
+    if (r.blockers) {
+      allBlockers.push(`${r.dateStr}: ${r.blockers}`);
+    }
+    
+    dailySummaries.push(`${r.dateStr}: ${completed}/${r.tasks.length} 완료`);
+  });
+  
+  const avgProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  
+  weeklyAutoReportText = `📋 주간 보고서 (자동 생성)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 기간: ${weekRecords[0].dateStr} ~ ${weekRecords[weekRecords.length - 1].dateStr}
+
+📊 전체 진행률: ${avgProgress}%
+✅ 완료: ${completedTasks}/${totalTasks} 개
+
+📅 일일 요약:
+${dailySummaries.join('\n')}
+
+${allBlockers.length > 0 ? `🚧 막힌 곳:\n${allBlockers.join('\n')}` : '🚧 막힌 곳: 없음'}
+
+💡 다음 주 계획:
+- 이번 주 미완료 업무 계속 진행
+- 새로운 업무 계획 수립
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔥 연속 일일 기록: ${document.getElementById('dailyStreakBadge').textContent.replace('📅 연속 일일: ', '')}
+`;
+  
+  content.textContent = weeklyAutoReportText;
+}
+
+// 주간 자동 보고서 복사
+function copyWeeklyAutoReport() {
+  if (!weeklyAutoReportText) {
+    alert('복사할 내용이 없습니다.');
+    return;
+  }
+  navigator.clipboard.writeText(weeklyAutoReportText).then(() => {
+    alert('✅ 클립보드에 복사되었습니다!');
+  }).catch(() => {
+    const textarea = document.createElement('textarea');
+    textarea.value = weeklyAutoReportText;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    alert('✅ 클립보드에 복사되었습니다!');
+  });
+}
+
+// 일일 streak 업데이트
+function updateDailyStreak() {
+  if (dailyRecords.length === 0) {
+    document.getElementById('dailyStreakBadge').textContent = '📅 연속 일일: 0일';
+    return;
+  }
+  
+  let streak = 0;
+  let checkDate = new Date();
+  
+  while (true) {
+    const dateKey = getDateKey(checkDate);
+    const found = dailyRecords.find(r => r.dateKey === dateKey && r.tasks.length > 0);
+    if (found) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  
+  document.getElementById('dailyStreakBadge').textContent = `📅 연속 일일: ${streak}일`;
+}
+
+// 오늘 날짜 키
+function getTodayKey() {
+  return getDateKey(new Date());
+}
+
+// 내일 날짜 키
+function getTomorrowKey() {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return getDateKey(tomorrow);
+}
+
+// 날짜 키 (YYYY-MM-DD)
+function getDateKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+// 질문 필드 추가
+function addQuestionField() {
+  const container = document.getElementById('questionsContainer');
+  const div = document.createElement('div');
+  div.className = 'question-input-group';
+  div.style.marginBottom = '10px';
+  div.innerHTML = `
+    <input type="text" class="question-input" placeholder="질문을 입력하세요" style="width: 70%; display: inline-block;">
+    <select class="question-category" style="width: 28%; display: inline-block; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
+      <option value="업무 방법">업무 방법</option>
+      <option value="우선순위">우선순위</option>
+      <option value="기타">기타</option>
+    </select>
+  `;
+  container.appendChild(div);
+}
+
+// 보고서 저장
+function saveReport() {
+  const work = document.getElementById('currentWork').value.trim();
+  const progress = parseInt(document.getElementById('progressRange').value);
+  const blockers = document.getElementById('blockers').value.trim();
+  
+  const questionInputs = document.querySelectorAll('.question-input');
+  const questionCategories = document.querySelectorAll('.question-category');
+  const questions = [];
+  questionInputs.forEach((input, i) => {
+    if (input.value.trim()) {
+      questions.push({
+        text: input.value.trim(),
+        category: questionCategories[i].value
+      });
+    }
+  });
+  
+  const gotAnswer = document.querySelector('input[name="gotAnswer"]:checked')?.value || '';
+  const helpful = document.querySelector('input[name="helpful"]:checked')?.value || '';
+  
+  if (!work) {
+    alert('진행 상황을 입력해주세요!');
+    return;
+  }
+  if (questions.length === 0) {
+    alert('질문을 1개 이상 입력해주세요!');
+    return;
+  }
+  
+  const now = new Date();
+  const report = {
+    id: Date.now(),
+    date: now.toISOString(),
+    dateStr: formatDate(now),
+    weekKey: getWeekKey(now),
+    work: work,
+    progress: progress,
+    blockers: blockers,
+    questions: questions,
+    gotAnswer: gotAnswer,
+    helpful: helpful
+  };
+  
+  // 같은 주에 이미 보고서가 있으면 업데이트
+  const existingIndex = reports.findIndex(r => r.weekKey === report.weekKey);
+  if (existingIndex >= 0) {
+    reports[existingIndex] = report;
+  } else {
+    reports.push(report);
+  }
+  
+  saveData();
+  updateStreak();
+  renderDashboard();
+  renderHistory();
+  updatePreview();
+  
+  // 입력 폼 초기화
+  document.getElementById('currentWork').value = '';
+  document.getElementById('blockers').value = '';
+  document.getElementById('progressRange').value = 0;
+  updateProgress(0);
+  document.querySelectorAll('.question-input').forEach((input, i) => {
+    if (i > 0) input.parentElement.remove();
+    else input.value = '';
+  });
+  document.querySelectorAll('input[name="gotAnswer"]').forEach(r => r.checked = false);
+  document.querySelectorAll('input[name="helpful"]').forEach(r => r.checked = false);
+  
+  alert('✅ 보고서가 저장되었습니다!');
+}
+
+// 날짜 포맷
+function formatDate(date) {
+  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+}
+
+// 주 키 가져오기 (년도-주차)
+function getWeekKey(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - d.getDay() + 1); // 월요일 기준
+  return `${d.getFullYear()}-W${getWeekNumber(d)}`;
+}
+
+// 주차 계산
+function getWeekNumber(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+}
+
+// 연속 보고 계산
+function updateStreak() {
+  if (reports.length === 0) {
+    document.getElementById('streakBadge').textContent = '🔥 연속 보고: 0주';
+    return;
+  }
+  
+  const sorted = [...reports].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const currentWeek = getWeekKey(new Date());
+  let streak = 0;
+  
+  // 이번 주 또는 지난주부터 시작
+  let checkDate = new Date();
+  if (sorted[0].weekKey !== currentWeek) {
+    // 이번 주 보고서가 없으면 지난주부터 확인
+    checkDate.setDate(checkDate.getDate() - 7);
+  }
+  
+  while (true) {
+    const weekKey = getWeekKey(checkDate);
+    const found = reports.find(r => r.weekKey === weekKey);
+    if (found) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 7);
+    } else {
+      break;
+    }
+  }
+  
+  document.getElementById('streakBadge').textContent = `🔥 연속 보고: ${streak}주`;
+}
+
+// 대시보드 렌더링
+function renderDashboard() {
+  const total = reports.length;
+  const avgProgress = total > 0 ? Math.round(reports.reduce((sum, r) => sum + r.progress, 0) / total) : 0;
+  const totalQuestions = reports.reduce((sum, r) => sum + r.questions.length, 0);
+  
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statAvgProgress').textContent = avgProgress + '%';
+  document.getElementById('statQuestions').textContent = totalQuestions;
+  
+  // 연속 보고 계산
+  const sorted = [...reports].sort((a, b) => new Date(b.date) - new Date(a.date));
+  let streak = 0;
+  if (sorted.length > 0) {
+    const currentWeek = getWeekKey(new Date());
+    let checkDate = new Date();
+    if (sorted[0].weekKey !== currentWeek) {
+      checkDate.setDate(checkDate.getDate() - 7);
+    }
+    while (true) {
+      const weekKey = getWeekKey(checkDate);
+      const found = reports.find(r => r.weekKey === weekKey);
+      if (found) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 7);
+      } else {
+        break;
+      }
+    }
+  }
+  document.getElementById('statStreak').textContent = streak;
+  
+  // 지난주 대비 변화
+  renderWeekComparison();
+  
+  // 팀장용 요약
+  renderManagerSummary();
+}
+
+// 지난주 대비 변화
+function renderWeekComparison() {
+  const container = document.getElementById('weekComparison');
+  if (reports.length < 2) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><p>비교할 데이터가 없습니다.</p></div>';
+    return;
+  }
+  
+  const sorted = [...reports].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const latest = sorted[0];
+  const prev = sorted[1];
+  
+  const progressDiff = latest.progress - prev.progress;
+  const questionDiff = latest.questions.length - prev.questions.length;
+  
+  const progressColor = progressDiff >= 0 ? '#28a745' : '#dc3545';
+  const questionColor = questionDiff >= 0 ? '#28a745' : '#dc3545';
+  const progressIcon = progressDiff >= 0 ? '▲' : '▼';
+  const questionIcon = questionDiff >= 0 ? '▲' : '▼';
+  
+  container.innerHTML = `
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+      <div style="background: #fff; padding: 15px; border-radius: 8px; text-align: center;">
+        <div style="font-size: 0.8em; color: #888;">진행률 변화</div>
+        <div style="font-size: 1.5em; font-weight: bold; color: ${progressColor};">${progressIcon} ${Math.abs(progressDiff)}%</div>
+        <div style="font-size: 0.8em; color: #888;">${prev.progress}% → ${latest.progress}%</div>
+      </div>
+      <div style="background: #fff; padding: 15px; border-radius: 8px; text-align: center;">
+        <div style="font-size: 0.8em; color: #888;">질문 수 변화</div>
+        <div style="font-size: 1.5em; font-weight: bold; color: ${questionColor};">${questionIcon} ${Math.abs(questionDiff)}개</div>
+        <div style="font-size: 0.8em; color: #888;">${prev.questions.length}개 → ${latest.questions.length}개</div>
+      </div>
+    </div>
+  `;
+}
+
+// 팀장용 요약
+function renderManagerSummary() {
+  const container = document.getElementById('managerSummary');
+  if (reports.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">👔</div><p>팀장용 요약이 여기에 표시됩니다.</p></div>';
+    return;
+  }
+  
+  const sorted = [...reports].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const latest = sorted[0];
+  
+  let questionsHtml = latest.questions.map(q => `
+    <div class="question-item">
+      <span>${escapeHtml(q.text)}</span>
+      <span class="category">${q.category}</span>
+    </div>
+  `).join('');
+  
+  container.innerHTML = `
+    <div style="background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+      <div style="font-weight: bold; margin-bottom: 8px;">📅 ${latest.dateStr}</div>
+      <div style="margin-bottom: 10px;"><strong>진행률:</strong> ${latest.progress}%</div>
+      <div style="margin-bottom: 10px;"><strong>하고 있는 일:</strong></div>
+      <div style="white-space: pre-wrap; color: #555; margin-bottom: 10px;">${escapeHtml(latest.work)}</div>
+      ${latest.blockers ? `<div style="color: #dc3545;"><strong>🚧 막힌 곳:</strong> ${escapeHtml(latest.blockers)}</div>` : ''}
+    </div>
+    <div style="font-weight: bold; margin-bottom: 10px;">❓ 질문 목록 (${latest.questions.length}개)</div>
+    ${questionsHtml}
+  `;
+}
+
+// 미리보기 업데이트
+function updatePreview() {
+  const container = document.getElementById('currentPreview');
+  const currentWeek = getWeekKey(new Date());
+  const report = reports.find(r => r.weekKey === currentWeek);
+  
+  if (!report) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><p>아직 이번 주 보고서가 없습니다.<br>보고서를 작성해주세요!</p></div>';
+    return;
+  }
+  
+  let questionsHtml = report.questions.map(q => `
+    <div class="question-item">
+      <span>${escapeHtml(q.text)}</span>
+      <span class="category">${q.category}</span>
+    </div>
+  `).join('');
+  
+  container.innerHTML = `
+    <div class="preview-box">
+      <div style="font-weight: bold; margin-bottom: 10px;">📅 ${report.dateStr}</div>
+      <div style="margin-bottom: 10px;"><strong>진행률:</strong> ${report.progress}%</div>
+      <div class="progress-bar" style="margin-bottom: 15px;">
+        <div class="progress-bar-fill" style="width: ${report.progress}%">${report.progress}%</div>
+      </div>
+      <div style="margin-bottom: 10px;"><strong>하고 있는 일:</strong></div>
+      <div style="white-space: pre-wrap; margin-bottom: 15px;">${escapeHtml(report.work)}</div>
+      ${report.blockers ? `<div style="color: #dc3545; margin-bottom: 15px;"><strong>🚧 막힌 곳:</strong> ${escapeHtml(report.blockers)}</div>` : ''}
+      <div style="font-weight: bold; margin-bottom: 8px;">❓ 질문 (${report.questions.length}개)</div>
+      ${questionsHtml}
+    </div>
+  `;
+}
+
+// 기록 렌더링
+function renderHistory() {
+  const container = document.getElementById('historyList');
+  if (reports.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📜</div><p>아직 기록이 없습니다.</p></div>';
+    return;
+  }
+  
+  const sorted = [...reports].sort((a, b) => new Date(b.date) - new Date(a.date));
+  
+  container.innerHTML = sorted.map(r => `
+    <div class="history-item">
+      <div class="history-date">📅 ${r.dateStr}</div>
+      <div><strong>진행률:</strong> ${r.progress}%</div>
+      <div class="history-progress">
+        <div class="progress-bar">
+          <div class="progress-bar-fill" style="width: ${r.progress}%">${r.progress}%</div>
+        </div>
+      </div>
+      <div style="margin-top: 8px; font-size: 0.9em;"><strong>질문:</strong> ${r.questions.length}개</div>
+      ${r.blockers ? `<div style="margin-top: 5px; font-size: 0.9em; color: #dc3545;"><strong>🚧 막힌 곳:</strong> ${escapeHtml(r.blockers)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+// 내보내기
+function exportData(type) {
+  const area = document.getElementById('exportArea');
+  
+  if (reports.length === 0) {
+    area.textContent = '내보낼 데이터가 없습니다.';
+    currentExportText = '';
+    return;
+  }
+  
+  const sorted = [...reports].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const latest = sorted[0];
+  
+  if (type === 'summary') {
+    currentExportText = `📋 주간 보고 요약 - ${latest.dateStr}
+
+👤 진행 상황:
+${latest.work}
+
+📊 진행률: ${latest.progress}%
+
+${latest.blockers ? `🚧 막힌 곳:\n${latest.blockers}\n` : ''}
+❓ 질문 목록:
+${latest.questions.map((q, i) => `${i + 1}. [${q.category}] ${q.text}`).join('\n')}
+
+🔥 연속 보고: ${document.getElementById('streakBadge').textContent.replace('🔥 연속 보고: ', '')}
+`;
+  } else {
+    currentExportText = `📋 주간 보고 전체 기록
+
+${sorted.map(r => `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 ${r.dateStr}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+진행률: ${r.progress}%
+
+하고 있는 일:
+${r.work}
+
+${r.blockers ? `막힌 곳:\n${r.blockers}\n` : ''}질문:
+${r.questions.map((q, i) => `  ${i + 1}. [${q.category}] ${q.text}`).join('\n')}
+
+지난주 회고:
+  답변 여부: ${r.gotAnswer || '미응답'}
+  도움 정도: ${r.helpful ? r.helpful + '점' : '미응답'}
+`).join('\n')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔥 연속 보고: ${document.getElementById('streakBadge').textContent.replace('🔥 연속 보고: ', '')}
+`;
+  }
+  
+  area.textContent = currentExportText;
+}
+
+// 복사하기
+function copyExport() {
+  if (!currentExportText) {
+    alert('복사할 내용이 먼저 생성되지 않았습니다.');
+    return;
+  }
+  navigator.clipboard.writeText(currentExportText).then(() => {
+    alert('✅ 클립보드에 복사되었습니다!');
+  }).catch(() => {
+    // 폴백
+    const textarea = document.createElement('textarea');
+    textarea.value = currentExportText;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    alert('✅ 클립보드에 복사되었습니다!');
+  });
+}
+
+// HTML 이스케이프
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// 알림 권한 확인
+function checkNotificationPermission() {
+  if (!('Notification' in window)) {
+    document.getElementById('notifPermission').style.display = 'none';
+    return;
+  }
+  if (Notification.permission === 'default') {
+    document.getElementById('notifPermission').style.display = 'flex';
+  } else {
+    document.getElementById('notifPermission').style.display = 'none';
+  }
+}
+
+// 알림 권한 요청
+function requestNotificationPermission() {
+  Notification.requestPermission().then(permission => {
+    if (permission === 'granted') {
+      document.getElementById('notifPermission').style.display = 'none';
+      alert('✅ 알림이 설정되었습니다! 매주 월요일 오전 9시에 알림을 받습니다.');
+      scheduleNotification();
+    }
+  });
+}
+
+// 알림 스케줄링
+function scheduleNotification() {
+  if (Notification.permission !== 'granted') return;
+  
+  const now = new Date();
+  const nextMonday = new Date(now);
+  const day = now.getDay();
+  const diff = day === 1 ? (now.getHours() < 9 ? 0 : 7) : (8 - day) % 7;
+  nextMonday.setDate(now.getDate() + diff);
+  nextMonday.setHours(9, 0, 0, 0);
+  
+  const timeout = nextMonday - now;
+  
+  setTimeout(() => {
+    new Notification('📋 주간 보고 습관 트래커', {
+      body: '이번 주 보고서를 작성하세요! 진행 상황과 질문을 준비해보세요.',
+      icon: '📋'
+    });
+    scheduleNotification(); // 다음 주 예약
+  }, timeout);
+}
+
+// 페이지 로드 시 초기화
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

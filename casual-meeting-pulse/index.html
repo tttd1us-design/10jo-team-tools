@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캐주얼 회의 익명 펄스</title>
+<style>
+  :root {
+    --bg: #f7f4ef;
+    --card: #ffffff;
+    --primary: #7c9eb2;
+    --primary-light: #a8c4d4;
+    --accent: #e8b4b8;
+    --accent-light: #f2d7d9;
+    --text: #3d3d3d;
+    --text-light: #6b6b6b;
+    --border: #e0dcd5;
+    --success: #8fbc8f;
+    --warning: #daa520;
+    --danger: #cd5c5c;
+    --radius: 12px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px 16px;
+  }
+
+  header {
+    text-align: center;
+    padding: 24px 0 16px;
+  }
+
+  header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 4px;
+  }
+
+  header p {
+    font-size: 0.875rem;
+    color: var(--text-light);
+  }
+
+  .anonymous-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-top: 12px;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+
+  .card h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group:last-child {
+    margin-bottom: 0;
+  }
+
+  label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  input[type="date"],
+  input[type="number"],
+  textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: #fafafa;
+    transition: border-color 0.2s;
+  }
+
+  input[type="date"]:focus,
+  input[type="number"]:focus,
+  textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: #fff;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .emoji-select {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+
+  .emoji-option {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 4px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fafafa;
+  }
+
+  .emoji-option:hover {
+    border-color: var(--primary-light);
+    background: #f0f7fa;
+  }
+
+  .emoji-option.selected {
+    border-color: var(--primary);
+    background: #e8f4f8;
+  }
+
+  .emoji-option .emoji {
+    font-size: 1.75rem;
+    margin-bottom: 4px;
+  }
+
+  .emoji-option .label {
+    font-size: 0.7rem;
+    color: var(--text-light);
+    text-align: center;
+  }
+
+  .category-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .category-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.85rem;
+  }
+
+  .category-item:hover {
+    border-color: var(--primary-light);
+  }
+
+  .category-item.checked {
+    border-color: var(--primary);
+    background: #e8f4f8;
+  }
+
+  .category-item input[type="checkbox"] {
+    accent-color: var(--primary);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    background: #6a8ca0;
+  }
+
+  .btn-danger {
+    background: var(--danger);
+    color: #fff;
+    font-size: 0.85rem;
+    padding: 8px 16px;
+    width: auto;
+  }
+
+  .btn-danger:hover {
+    background: #b84a4a;
+  }
+
+  .btn-secondary {
+    background: var(--border);
+    color: var(--text);
+    font-size: 0.85rem;
+    padding: 8px 16px;
+    width: auto;
+  }
+
+  .btn-secondary:hover {
+    background: #d0ccc5;
+  }
+
+  /* Dashboard */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .stat-box {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-top: 4px;
+  }
+
+  .chart-container {
+    margin-top: 12px;
+  }
+
+  .chart-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .chart-label {
+    width: 100px;
+    font-size: 0.8rem;
+    color: var(--text-light);
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .chart-track {
+    flex: 1;
+    height: 24px;
+    background: #f0f0f0;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .chart-fill {
+    height: 100%;
+    border-radius: 12px;
+    transition: width 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+  }
+
+  .chart-count {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    min-width: 16px;
+  }
+
+  .chart-count-outside {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-light);
+    min-width: 20px;
+  }
+
+  .response-list {
+    margin-top: 12px;
+  }
+
+  .response-item {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-left: 3px solid var(--primary-light);
+  }
+
+  .response-item .response-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .response-item .response-emoji {
+    font-size: 1.25rem;
+  }
+
+  .response-item .response-date {
+    font-size: 0.75rem;
+    color: var(--text-light);
+  }
+
+  .response-item .response-text {
+    font-size: 0.875rem;
+    color: var(--text);
+    word-break: break-word;
+  }
+
+  .response-item .response-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  .response-item .category-tag {
+    font-size: 0.7rem;
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--text-light);
+  }
+
+  .empty-state .empty-icon {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+  }
+
+  .empty-state p {
+    font-size: 0.875rem;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .section-header h2 {
+    margin-bottom: 0;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  .tab-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fafafa;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-light);
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+
+  .tab-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  .confirm-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+
+  .confirm-dialog .dialog-box {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 24px;
+    max-width: 320px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .confirm-dialog .dialog-box h3 {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+
+  .confirm-dialog .dialog-box p {
+    font-size: 0.875rem;
+    color: var(--text-light);
+    margin-bottom: 20px;
+  }
+
+  .confirm-dialog .dialog-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .confirm-dialog .dialog-actions .btn {
+    flex: 1;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--text);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 1001;
+  }
+
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  @media (max-width: 400px) {
+    .emoji-select {
+      gap: 4px;
+    }
+    .emoji-option {
+      padding: 8px 2px;
+    }
+    .emoji-option .emoji {
+      font-size: 1.5rem;
+    }
+    .emoji-option .label {
+      font-size: 0.65rem;
+    }
+    .category-grid {
+      grid-template-columns: 1fr;
+    }
+    .chart-label {
+      width: 80px;
+      font-size: 0.75rem;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🗣️ 캐주얼 회의 익명 펄스</h1>
+    <p>팀장 없는 회의, 솔직한 마음을 남겨주세요</p>
+    <div class="anonymous-badge">
+      <span>🔒</span>
+      <span>이 응답은 이름을 남기지 않습니다</span>
+    </div>
+  </header>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" data-tab="submit">응답하기</button>
+    <button class="tab-btn" data-tab="dashboard">결과보기</button>
+  </div>
+
+  <!-- 응답 탭 -->
+  <div id="tab-submit" class="tab-content active">
+    <div class="card">
+      <h2>📋 회의 정보</h2>
+      <div class="form-group">
+        <label for="meetingDate">회의 날짜</label>
+        <input type="date" id="meetingDate">
+      </div>
+      <div class="form-group">
+        <label for="participantCount">참여자 수</label>
+        <input type="number" id="participantCount" min="1" max="100" placeholder="숫자만 입력">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🌡️ 감정 온도</h2>
+      <p style="font-size:0.8rem;color:var(--text-light);margin-bottom:8px;">오늘 회의, 어땠나요?</p>
+      <div class="emoji-select" id="emojiSelect">
+        <div class="emoji-option" data-value="1">
+          <span class="emoji">😣</span>
+          <span class="label">매우 불편</span>
+        </div>
+        <div class="emoji-option" data-value="2">
+          <span class="emoji">😕</span>
+          <span class="label">불편</span>
+        </div>
+        <div class="emoji-option" data-value="3">
+          <span class="emoji">😐</span>
+          <span class="label">보통</span>
+        </div>
+        <div class="emoji-option" data-value="4">
+          <span class="emoji">🙂</span>
+          <span class="label">편안</span>
+        </div>
+        <div class="emoji-option" data-value="5">
+          <span class="emoji">😄</span>
+          <span class="label">매우 편안</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>💬 한마디 (선택)</h2>
+      <div class="form-group">
+        <textarea id="commentText" placeholder="자유롭게 남겨주세요. 익명으로 저장됩니다."></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>✅ 어떤 점이 좋았나요?</h2>
+      <div class="category-grid" id="categoryGrid">
+        <label class="category-item">
+          <input type="checkbox" value="소통이 편해졌다">
+          <span>소통이 편해졌다</span>
+        </label>
+        <label class="category-item">
+          <input type="checkbox" value="위에서 안 보는 느낌">
+          <span>위에서 안 보는 느낌</span>
+        </label>
+        <label class="category-item">
+          <input type="checkbox" value="동료 신뢰감">
+          <span>동료 신뢰감</span>
+        </label>
+        <label class="category-item">
+          <input type="checkbox" value="아직 어색하다">
+          <span>아직 어색하다</span>
+        </label>
+        <label class="category-item">
+          <input type="checkbox" value="기타">
+          <span>기타</span>
+        </label>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="submitBtn">응답 제출하기</button>
+  </div>
+
+  <!-- 대시보드 탭 -->
+  <div id="tab-dashboard" class="tab-content">
+    <div class="card">
+      <div class="section-header">
+        <h2>📊 결과 대시보드</h2>
+        <button class="btn btn-danger" id="resetBtn">데이터 초기화</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-value" id="avgScore">-</div>
+          <div class="stat-label">평균 감정 온도</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="totalCount">0</div>
+          <div class="stat-label">총 응답 수</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📈 카테고리별 응답</h2>
+      <div class="chart-container" id="chartContainer">
+        <div class="empty-state">
+          <div class="empty-icon">📊</div>
+          <p>아직 응답이 없습니다</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📝 최근 응답</h2>
+      <div class="response-list" id="responseList">
+        <div class="empty-state">
+          <div class="empty-icon">💬</div>
+          <p>아직 응답이 없습니다</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 초기화 확인 다이얼로그 -->
+<div class="confirm-dialog hidden" id="confirmDialog">
+  <div class="dialog-box">
+    <h3>⚠️ 데이터 초기화</h3>
+    <p>모든 응답 데이터가 삭제됩니다.<br>정말 초기화하시겠습니까?</p>
+    <div class="dialog-actions">
+      <button class="btn btn-secondary" id="cancelReset">취소</button>
+      <button class="btn btn-danger" id="confirmReset">초기화</button>
+    </div>
+  </div>
+</div>
+
+<!-- 토스트 알림 -->
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  'use strict';
+
+  const STORAGE_KEY = 'casual_meeting_pulse_responses';
+  const EMOJI_MAP = { 1: '😣', 2: '😕', 3: '😐', 4: '🙂', 5: '😄' };
+  const CATEGORY_COLORS = {
+    '소통이 편해졌다': '#7c9eb2',
+    '위에서 안 보는 느낌': '#a8c4d4',
+    '동료 신뢰감': '#8fbc8f',
+    '아직 어색하다': '#e8b4b8',
+    '기타': '#daa520'
+  };
+
+  // DOM 요소
+  const meetingDateEl = document.getElementById('meetingDate');
+  const participantCountEl = document.getElementById('participantCount');
+  const emojiSelectEl = document.getElementById('emojiSelect');
+  const commentTextEl = document.getElementById('commentText');
+  const categoryGridEl = document.getElementById('categoryGrid');
+  const submitBtn = document.getElementById('submitBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const confirmDialog = document.getElementById('confirmDialog');
+  const cancelResetBtn = document.getElementById('cancelReset');
+  const confirmResetBtn = document.getElementById('confirmReset');
+  const toast = document.getElementById('toast');
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  let selectedEmoji = null;
+
+  // 초기화
+  function init() {
+    // 오늘 날짜 기본값
+    meetingDateEl.valueAsDate = new Date();
+
+    // 이모지 선택 이벤트
+    emojiSelectEl.querySelectorAll('.emoji-option').forEach(option => {
+      option.addEventListener('click', () => {
+        emojiSelectEl.querySelectorAll('.emoji-option').forEach(o => o.classList.remove('selected'));
+        option.classList.add('selected');
+        selectedEmoji = parseInt(option.dataset.value);
+      });
+    });
+
+    // 카테고리 체크박스 이벤트
+    categoryGridEl.querySelectorAll('.category-item input').forEach(checkbox => {
+      checkbox.addEventListener('change', () => {
+        const item = checkbox.closest('.category-item');
+        if (checkbox.checked) {
+          item.classList.add('checked');
+        } else {
+          item.classList.remove('checked');
+        }
+      });
+    });
+
+    // 제출 버튼
+    submitBtn.addEventListener('click', handleSubmit);
+
+    // 초기화 버튼
+    resetBtn.addEventListener('click', () => {
+      confirmDialog.classList.remove('hidden');
+    });
+    cancelResetBtn.addEventListener('click', () => {
+      confirmDialog.classList.add('hidden');
+    });
+    confirmResetBtn.addEventListener('click', () => {
+      localStorage.removeItem(STORAGE_KEY);
+      confirmDialog.classList.add('hidden');
+      showToast('데이터가 초기화되었습니다');
+      renderDashboard();
+    });
+
+    // 탭 전환
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.tab;
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + target).classList.add('active');
+        if (target === 'dashboard') {
+          renderDashboard();
+        }
+      });
+    });
+
+    // 대시보드 초기 렌더링
+    renderDashboard();
+  }
+
+  // 응답 제출
+  function handleSubmit() {
+    const date = meetingDateEl.value;
+    const count = parseInt(participantCountEl.value);
+    const comment = commentTextEl.value.trim();
+    const categories = Array.from(categoryGridEl.querySelectorAll('input:checked')).map(cb => cb.value);
+
+    // 유효성 검사
+    if (!date) {
+      showToast('회의 날짜를 선택해주세요');
+      return;
+    }
+    if (!count || count < 1) {
+      showToast('참여자 수를 입력해주세요');
+      return;
+    }
+    if (!selectedEmoji) {
+      showToast('감정 온도를 선택해주세요');
+      return;
+    }
+
+    // 응답 데이터 생성
+    const response = {
+      id: Date.now(),
+      date: date,
+      participantCount: count,
+      emotionScore: selectedEmoji,
+      comment: comment,
+      categories: categories,
+      timestamp: new Date().toISOString()
+    };
+
+    // localStorage에 저장
+    const responses = getResponses();
+    responses.push(response);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(responses));
+
+    // 폼 초기화
+    commentTextEl.value = '';
+    participantCountEl.value = '';
+    selectedEmoji = null;
+    emojiSelectEl.querySelectorAll('.emoji-option').forEach(o => o.classList.remove('selected'));
+    categoryGridEl.querySelectorAll('input:checked').forEach(cb => {
+      cb.checked = false;
+      cb.closest('.category-item').classList.remove('checked');
+    });
+
+    showToast('응답이 저장되었습니다. 감사합니다!');
+  }
+
+  // 응답 데이터 가져오기
+  function getResponses() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // 대시보드 렌더링
+  function renderDashboard() {
+    const responses = getResponses();
+
+    // 통계
+    const totalCount = responses.length;
+    const avgScore = totalCount > 0
+      ? (responses.reduce((sum, r) => sum + r.emotionScore, 0) / totalCount).toFixed(1)
+      : '-';
+
+    document.getElementById('totalCount').textContent = totalCount;
+    document.getElementById('avgScore').textContent = avgScore;
+
+    // 카테고리 차트
+    renderChart(responses);
+
+    // 최근 응답 목록
+    renderResponseList(responses);
+  }
+
+  // 카테고리 차트 렌더링
+  function renderChart(responses) {
+    const container = document.getElementById('chartContainer');
+
+    if (responses.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><p>아직 응답이 없습니다</p></div>';
+      return;
+    }
+
+    // 카테고리별 카운트
+    const categoryCounts = {};
+    const allCategories = ['소통이 편해졌다', '위에서 안 보는 느낌', '동료 신뢰감', '아직 어색하다', '기타'];
+    allCategories.forEach(cat => categoryCounts[cat] = 0);
+
+    responses.forEach(r => {
+      if (r.categories && r.categories.length > 0) {
+        r.categories.forEach(cat => {
+          if (categoryCounts[cat] !== undefined) {
+            categoryCounts[cat]++;
+          }
+        });
+      }
+    });
+
+    const maxCount = Math.max(...Object.values(categoryCounts), 1);
+
+    let html = '';
+    allCategories.forEach(cat => {
+      const count = categoryCounts[cat];
+      const percentage = (count / maxCount) * 100;
+      const color = CATEGORY_COLORS[cat] || '#999';
+      const countDisplay = count > 0 ? count : '';
+      const countClass = count > 0 ? 'chart-count' : 'chart-count-outside';
+
+      html += '<div class="chart-bar">';
+      html += '<div class="chart-label">' + cat + '</div>';
+      html += '<div class="chart-track">';
+      html += '<div class="chart-fill" style="width:' + percentage + '%;background:' + color + '">';
+      if (count > 0) {
+        html += '<span class="chart-count">' + count + '</span>';
+      }
+      html += '</div>';
+      if (count === 0) {
+        html += '<span class="chart-count-outside">0</span>';
+      }
+      html += '</div>';
+      html += '</div>';
+    });
+
+    container.innerHTML = html;
+  }
+
+  // 응답 목록 렌더링
+  function renderResponseList(responses) {
+    const container = document.getElementById('responseList');
+
+    if (responses.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div><p>아직 응답이 없습니다</p></div>';
+      return;
+    }
+
+    // 최근 5개만 (최신순)
+    const recent = responses.slice(-5).reverse();
+
+    let html = '';
+    recent.forEach(r => {
+      const emoji = EMOJI_MAP[r.emotionScore] || '😐';
+      const dateStr = formatDate(r.date);
+      const categories = (r.categories && r.categories.length > 0)
+        ? r.categories.map(c => '<span class="category-tag">' + c + '</span>').join('')
+        : '';
+
+      html += '<div class="response-item">';
+      html += '<div class="response-header">';
+      html += '<span class="response-emoji">' + emoji + '</span>';
+      html += '<span class="response-date">' + dateStr + '</span>';
+      html += '</div>';
+      if (r.comment) {
+        html += '<div class="response-text">' + escapeHtml(r.comment) + '</div>';
+      }
+      if (categories) {
+        html += '<div class="response-categories">' + categories + '</div>';
+      }
+      html += '</div>';
+    });
+
+    container.innerHTML = html;
+  }
+
+  // 날짜 포맷
+  function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    return d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
+  }
+
+  // HTML 이스케이프
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // 토스트 표시
+  function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2500);
+  }
+
+  // 시작
+  init();
+})();
+</script>
+</body>
+</html>

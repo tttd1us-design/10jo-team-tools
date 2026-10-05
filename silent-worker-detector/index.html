@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>침묵 직원 감지기 — 소통 구조 점검 도구</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #dee2e6;
+    --text: #212529;
+    --muted: #6c757d;
+    --primary: #4361ee;
+    --primary-light: #e8edff;
+    --safe: #2d9d5f;
+    --safe-bg: #e6f7ee;
+    --observe: #e8a13a;
+    --observe-bg: #fdf3e3;
+    --intervene: #e05c3a;
+    --intervene-bg: #fdeae5;
+    --danger: #c92a2a;
+    --danger-bg: #fdeaea;
+    --radius: 12px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  header {
+    text-align: center;
+    padding: 24px 0 16px;
+  }
+  header h1 { font-size: 1.6rem; margin-bottom: 8px; }
+  header p { color: var(--muted); font-size: 0.95rem; }
+  .disclaimer {
+    background: var(--primary-light);
+    border: 1px solid #c5d0f7;
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin: 16px 0;
+    font-size: 0.9rem;
+    color: #2c3e87;
+    text-align: center;
+  }
+  .section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .section h2 {
+    font-size: 1.15rem;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--primary-light);
+  }
+  .form-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .form-group {
+    flex: 1;
+    min-width: 140px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--muted);
+  }
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: #fff;
+  }
+  .btn {
+    display: inline-block;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: var(--primary);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #3651d4; }
+  .btn-danger {
+    background: var(--danger);
+    color: #fff;
+  }
+  .btn-sm {
+    padding: 4px 12px;
+    font-size: 0.8rem;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-outline:hover { background: var(--bg); }
+
+  /* 직원 목록 */
+  .employee-list {
+    display: grid;
+    gap: 12px;
+  }
+  .employee-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .employee-info {
+    flex: 1;
+    min-width: 200px;
+  }
+  .employee-name {
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+  .employee-meta {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .employee-score {
+    text-align: center;
+    min-width: 80px;
+  }
+  .score-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+  .score-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .badge-safe { background: var(--safe-bg); color: var(--safe); }
+  .badge-observe { background: var(--observe-bg); color: var(--observe); }
+  .badge-intervene { background: var(--intervene-bg); color: var(--intervene); }
+  .badge-danger { background: var(--danger-bg); color: var(--danger); }
+
+  /* 신호 기록 */
+  .signal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .signal-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .signal-item span {
+    font-size: 0.9rem;
+  }
+  .toggle-group {
+    display: flex;
+    gap: 8px;
+  }
+  .toggle-btn {
+    padding: 4px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+  }
+  .toggle-btn.active-yes {
+    background: var(--safe);
+    color: #fff;
+    border-color: var(--safe);
+  }
+  .toggle-btn.active-no {
+    background: var(--danger);
+    color: #fff;
+    border-color: var(--danger);
+  }
+
+  /* 추이 그래프 */
+  .trend-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 120px;
+    padding: 12px 0;
+    border-bottom: 2px solid var(--border);
+    margin-top: 12px;
+  }
+  .trend-bar {
+    flex: 1;
+    max-width: 60px;
+    border-radius: 4px 4px 0 0;
+    position: relative;
+    transition: height 0.3s;
+    min-height: 4px;
+  }
+  .trend-bar.safe { background: var(--safe); }
+  .trend-bar.observe { background: var(--observe); }
+  .trend-bar.intervene { background: var(--intervene); }
+  .trend-bar.danger { background: var(--danger); }
+  .trend-label {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .trend-wrapper {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 개입 가이드 */
+  .guide-card {
+    border-left: 4px solid;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    border-radius: 0 8px 8px 0;
+    background: #fafafa;
+  }
+  .guide-card.safe { border-color: var(--safe); }
+  .guide-card.observe { border-color: var(--observe); }
+  .guide-card.intervene { border-color: var(--intervene); }
+  .guide-card.danger { border-color: var(--danger); }
+  .guide-card h4 {
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+  }
+  .guide-card p {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .guide-card .script {
+    margin-top: 6px;
+    padding: 8px 12px;
+    background: #fff;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-style: italic;
+    border: 1px dashed var(--border);
+  }
+
+  /* 주간 기록 테이블 */
+  .week-selector {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .week-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+  .week-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+
+  /* 반응형 */
+  @media (max-width: 600px) {
+    body { padding: 12px; }
+    header h1 { font-size: 1.3rem; }
+    .employee-card { flex-direction: column; align-items: flex-start; }
+    .employee-score { text-align: left; }
+    .signal-grid { grid-template-columns: 1fr; }
+  }
+
+  /* 빈 상태 */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+  }
+  .empty-state .icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+  }
+
+  /* 알림 */
+  .alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+  }
+  .alert-info {
+    background: var(--primary-light);
+    color: #2c3e87;
+    border: 1px solid #c5d0f7;
+  }
+
+  /* 탭 */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid var(--border);
+  }
+  .tab {
+    padding: 10px 20px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--muted);
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+  }
+  .tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* 통계 요약 */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .stat-box {
+    text-align: center;
+    padding: 16px;
+    border-radius: var(--radius);
+    background: #fafafa;
+    border: 1px solid var(--border);
+  }
+  .stat-number {
+    font-size: 1.6rem;
+    font-weight: 800;
+  }
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🗣️ 침묵 직원 감지기</h1>
+  <p>팀장이 소통 구조를 점검하고, 개입 시점을 조기에 발견하는 도구</p>
+</header>
+
+<div class="disclaimer">
+  ⚠️ 이 도구는 직원을 평가하지 않습니다. 소통 구조를 점검하여 팀장이 더 잘 지원할 수 있도록 돕습니다.
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="dashboard">대시보드</button>
+  <button class="tab" data-tab="record">주간 기록</button>
+  <button class="tab" data-tab="trends">추이 분석</button>
+  <button class="tab" data-tab="guide">개입 가이드</button>
+</div>
+
+<!-- 대시보드 탭 -->
+<div id="tab-dashboard" class="tab-content active">
+  <div class="section">
+    <h2>📊 팀 소통 현황</h2>
+    <div class="stats-row" id="stats-row">
+      <div class="stat-box">
+        <div class="stat-number" id="stat-total">0</div>
+        <div class="stat-label">전체 직원</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="stat-safe" style="color:var(--safe)">0</div>
+        <div class="stat-label">안전</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="stat-observe" style="color:var(--observe)">0</div>
+        <div class="stat-label">관찰</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="stat-intervene" style="color:var(--intervene)">0</div>
+        <div class="stat-label">개입 필요</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="stat-danger" style="color:var(--danger)">0</div>
+        <div class="stat-label">위험</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>👥 직원 목록</h2>
+    <div class="form-row">
+      <div class="form-group">
+        <label>이름 또는 익명 ID</label>
+        <input type="text" id="emp-name" placeholder="예: 김민수, A01">
+      </div>
+      <div class="form-group">
+        <label>입사연차</label>
+        <input type="number" id="emp-years" placeholder="예: 3" min="0" max="50">
+      </div>
+      <div class="form-group">
+        <label>담당 업무</label>
+        <input type="text" id="emp-role" placeholder="예: 백엔드 개발">
+      </div>
+      <div class="form-group" style="display:flex;align-items:flex-end;">
+        <button class="btn btn-primary" onclick="addEmployee()">+ 직원 추가</button>
+      </div>
+    </div>
+    <div class="employee-list" id="employee-list">
+      <div class="empty-state">
+        <div class="icon">👤</div>
+        <p>직원을 추가하면 소통 상태를 추적할 수 있습니다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 주간 기록 탭 -->
+<div id="tab-record" class="tab-content">
+  <div class="section">
+    <h2>📝 주간 소통 신호 기록</h2>
+    <div class="alert alert-info">
+      매주 월요일, 직원별로 4개 신호를 기록하세요. 기록된 데이터는 브라우저에 자동 저장됩니다.
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>직원 선택</label>
+        <select id="record-emp"></select>
+      </div>
+      <div class="form-group">
+        <label>기록 주차</label>
+        <select id="record-week"></select>
+      </div>
+    </div>
+    <div id="signal-form-container">
+      <div class="empty-state">
+        <div class="icon">📋</div>
+        <p>직원을 선택하면 신호 기록 폼이 표시됩니다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 추이 분석 탭 -->
+<div id="tab-trends" class="tab-content">
+  <div class="section">
+    <h2>📈 직원별 침묵 점수 추이 (최근 4주)</h2>
+    <div class="form-row">
+      <div class="form-group">
+        <label>직원 선택</label>
+        <select id="trend-emp"></select>
+      </div>
+    </div>
+    <div id="trend-container">
+      <div class="empty-state">
+        <div class="icon">📊</div>
+        <p>직원을 선택하면 4주 추이 그래프가 표시됩니다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 개입 가이드 탭 -->
+<div id="tab-guide" class="tab-content">
+  <div class="section">
+    <h2>💡 등급별 개입 가이드</h2>
+    <p style="color:var(--muted);margin-bottom:16px;font-size:0.9rem;">
+      팀장이 각 등급에서 할 수 있는 구체적인 행동과 대화 문장을 제안합니다.
+    </p>
+    <div id="guide-container"></div>
+  </div>
+</div>
+
+<script>
+// ==================== 데이터 관리 ====================
+const STORAGE_KEY = 'silentWorkerDetector_v1';
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) { console.error('데이터 로드 실패:', e); }
+  return { employees: [], records: {} };
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+}
+
+let appData = loadData();
+
+// ==================== 직원 관리 ====================
+function addEmployee() {
+  const name = document.getElementById('emp-name').value.trim();
+  const years = document.getElementById('emp-years').value.trim();
+  const role = document.getElementById('emp-role').value.trim();
+
+  if (!name) { alert('이름 또는 익명 ID를 입력하세요.'); return; }
+
+  const emp = {
+    id: 'emp_' + Date.now(),
+    name: name,
+    years: years ? parseInt(years) : null,
+    role: role || null,
+    createdAt: new Date().toISOString()
+  };
+
+  appData.employees.push(emp);
+  saveData();
+  renderDashboard();
+  renderRecordTab();
+  renderTrendTab();
+
+  // 입력 초기화
+  document.getElementById('emp-name').value = '';
+  document.getElementById('emp-years').value = '';
+  document.getElementById('emp-role').value = '';
+}
+
+function deleteEmployee(id) {
+  if (!confirm('이 직원을 삭제하시겠습니까? 기록된 모든 데이터도 함께 삭제됩니다.')) return;
+  appData.employees = appData.employees.filter(e => e.id !== id);
+  delete appData.records[id];
+  saveData();
+  renderDashboard();
+  renderRecordTab();
+  renderTrendTab();
+}
+
+// ==================== 점수 계산 ====================
+function calculateScore(empId, weekKey) {
+  const rec = appData.records[empId + '_' + weekKey];
+  if (!rec) return null;
+
+  // 4개 신호: 각 25점씩 (아니오=25, 예=0)
+  // 1. 먼저 보고했는가? (아니오=25)
+  // 2. 질문을 했는가? (아니오=25)
+  // 3. 진행 상황을 공유했는가? (아니오=25)
+  // 4. 팀장이 먼저 물어봐야 했는가? (예=25)
+  let score = 0;
+  if (rec.reported === false) score += 25;
+  if (rec.asked === false) score += 25;
+  if (rec.shared === false) score += 25;
+  if (rec.askedByManager === true) score += 25;
+
+  return score;
+}
+
+function getGrade(score) {
+  if (score === null) return null;
+  if (score <= 25) return { level: 'safe', label: '안전', color: 'var(--safe)' };
+  if (score <= 50) return { level: 'observe', label: '관찰', color: 'var(--observe)' };
+  if (score <= 75) return { level: 'intervene', label: '개입 필요', color: 'var(--intervene)' };
+  return { level: 'danger', label: '위험', color: 'var(--danger)' };
+}
+
+// ==================== 주차 계산 ====================
+function getWeekKeys() {
+  const now = new Date();
+  const keys = [];
+  for (let i = 0; i < 4; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - (i * 7));
+    const weekKey = getWeekKey(d);
+    keys.push(weekKey);
+  }
+  return keys;
+}
+
+function getWeekKey(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() - dayNum + 1);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return d.getUTCFullYear() + '-W' + String(weekNo).padStart(2, '0');
+}
+
+function formatWeekLabel(weekKey) {
+  const [y, w] = weekKey.split('-W');
+  return `${y}년 ${parseInt(w)}주차`;
+}
+
+// ==================== 렌더링 ====================
+function renderDashboard() {
+  const list = document.getElementById('employee-list');
+  const weekKeys = getWeekKeys();
+  const currentWeek = weekKeys[0];
+
+  // 통계
+  let counts = { safe: 0, observe: 0, intervene: 0, danger: 0, none: 0 };
+  appData.employees.forEach(emp => {
+    const score = calculateScore(emp.id, currentWeek);
+    const grade = getGrade(score);
+    if (grade) counts[grade.level]++;
+    else counts.none++;
+  });
+
+  document.getElementById('stat-total').textContent = appData.employees.length;
+  document.getElementById('stat-safe').textContent = counts.safe;
+  document.getElementById('stat-observe').textContent = counts.observe;
+  document.getElementById('stat-intervene').textContent = counts.intervene;
+  document.getElementById('stat-danger').textContent = counts.danger;
+
+  // 직원 목록
+  if (appData.employees.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">👤</div><p>직원을 추가하면 소통 상태를 추적할 수 있습니다.</p></div>';
+    return;
+  }
+
+  list.innerHTML = appData.employees.map(emp => {
+    const score = calculateScore(emp.id, currentWeek);
+    const grade = getGrade(score);
+    const meta = [emp.years ? emp.years + '년차' : '', emp.role].filter(Boolean).join(' · ');
+    const badge = grade
+      ? `<span class="badge badge-${grade.level}">${grade.label}</span>`
+      : '<span class="badge" style="background:#eee;color:#999;">미기록</span>';
+
+    return `
+      <div class="employee-card">
+        <div class="employee-info">
+          <div class="employee-name">${escapeHtml(emp.name)}</div>
+          <div class="employee-meta">${escapeHtml(meta) || '정보 없음'}</div>
+        </div>
+        <div class="employee-score">
+          <div class="score-value" style="color:${grade ? grade.color : '#999'}">${score !== null ? score : '-'}</div>
+          <div class="score-label">점수</div>
+        </div>
+        <div>${badge}</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="quickRecord('${emp.id}')">기록</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteEmployee('${emp.id}')">삭제</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderRecordTab() {
+  const sel = document.getElementById('record-emp');
+  const weekSel = document.getElementById('record-week');
+
+  sel.innerHTML = appData.employees.length
+    ? appData.employees.map(e => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('')
+    : '<option value="">직원 없음</option>';
+
+  const weekKeys = getWeekKeys();
+  weekSel.innerHTML = weekKeys.map((k, i) =>
+    `<option value="${k}" ${i === 0 ? 'selected' : ''}>${formatWeekLabel(k)}${i === 0 ? ' (이번 주)' : ''}</option>`
+  ).join('');
+
+  sel.onchange = renderSignalForm;
+  weekSel.onchange = renderSignalForm;
+
+  renderSignalForm();
+}
+
+function renderSignalForm() {
+  const empId = document.getElementById('record-emp').value;
+  const weekKey = document.getElementById('record-week').value;
+  const container = document.getElementById('signal-form-container');
+
+  if (!empId) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>직원을 선택하면 신호 기록 폼이 표시됩니다.</p></div>';
+    return;
+  }
+
+  const emp = appData.employees.find(e => e.id === empId);
+  const rec = appData.records[empId + '_' + weekKey] || {};
+
+  const signals = [
+    { key: 'reported', label: '이번 주 먼저 보고했는가?', yesLabel: '예, 먼저 보고함', noLabel: '아니오, 보고 안 함' },
+    { key: 'asked', label: '질문을 했는가?', yesLabel: '예, 질문함', noLabel: '아니오, 질문 안 함' },
+    { key: 'shared', label: '진행 상황을 공유했는가?', yesLabel: '예, 공유함', noLabel: '아니오, 공유 안 함' },
+    { key: 'askedByManager', label: '팀장이 먼저 물어봐야 했는가?', yesLabel: '예, 물어봐야 함', noLabel: '아니오, 스스로 보고함' }
+  ];
+
+  container.innerHTML = `
+    <div style="margin-bottom:12px;">
+      <strong>${escapeHtml(emp.name)}</strong> — ${formatWeekLabel(weekKey)}
+    </div>
+    <div class="signal-grid">
+      ${signals.map(s => `
+        <div class="signal-item">
+          <span>${s.label}</span>
+          <div class="toggle-group">
+            <button class="toggle-btn ${rec[s.key] === true ? 'active-yes' : ''}" onclick="setSignal('${empId}', '${weekKey}', '${s.key}', true)">예</button>
+            <button class="toggle-btn ${rec[s.key] === false ? 'active-no' : ''}" onclick="setSignal('${empId}', '${weekKey}', '${s.key}', false)">아니오</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;">
+      <button class="btn btn-primary" onclick="saveRecord('${empId}', '${weekKey}')">💾 저장</button>
+      <button class="btn btn-outline" onclick="clearRecord('${empId}', '${weekKey}')">초기화</button>
+    </div>
+  `;
+}
+
+function setSignal(empId, weekKey, key, value) {
+  const recKey = empId + '_' + weekKey;
+  if (!appData.records[recKey]) appData.records[recKey] = {};
+  appData.records[recKey][key] = value;
+  renderSignalForm();
+}
+
+function saveRecord(empId, weekKey) {
+  const recKey = empId + '_' + weekKey;
+  if (!appData.records[recKey]) {
+    alert('저장할 신호가 없습니다.');
+    return;
+  }
+  saveData();
+  renderDashboard();
+  alert('저장되었습니다.');
+}
+
+function clearRecord(empId, weekKey) {
+  const recKey = empId + '_' + weekKey;
+  delete appData.records[recKey];
+  saveData();
+  renderSignalForm();
+  renderDashboard();
+}
+
+function quickRecord(empId) {
+  switchTab('record');
+  document.getElementById('record-emp').value = empId;
+  renderSignalForm();
+}
+
+// ==================== 추이 분석 ====================
+function renderTrendTab() {
+  const sel = document.getElementById('trend-emp');
+  sel.innerHTML = appData.employees.length
+    ? appData.employees.map(e => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('')
+    : '<option value="">직원 없음</option>';
+
+  sel.onchange = renderTrendChart;
+  renderTrendChart();
+}
+
+function renderTrendChart() {
+  const empId = document.getElementById('trend-emp').value;
+  const container = document.getElementById('trend-container');
+
+  if (!empId) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📊</div><p>직원을 선택하면 4주 추이 그래프가 표시됩니다.</p></div>';
+    return;
+  }
+
+  const emp = appData.employees.find(e => e.id === empId);
+  const weekKeys = getWeekKeys().reverse(); // 오래된 순
+
+  const scores = weekKeys.map(wk => calculateScore(empId, wk));
+  const maxScore = 100;
+
+  const bars = weekKeys.map((wk, i) => {
+    const score = scores[i];
+    const grade = getGrade(score);
+    const height = score !== null ? Math.max(4, (score / maxScore) * 100) : 4;
+    const colorClass = grade ? grade.level : 'safe';
+    const opacity = score !== null ? 1 : 0.2;
+
+    return `
+      <div class="trend-wrapper">
+        <div class="trend-chart" style="height:120px;">
+          <div class="trend-bar ${colorClass}" style="height:${height}%;opacity:${opacity};" title="${score !== null ? score + '점' : '기록 없음'}"></div>
+        </div>
+        <div class="trend-label">${formatWeekLabel(wk)}<br>${score !== null ? score + '점' : '-'}</div>
+      </div>
+    `;
+  }).join('');
+
+  // 각 주차별 막대를 개별 컬럼으로 표시
+  const chartHtml = `
+    <div style="display:flex;gap:16px;align-items:flex-end;justify-content:center;padding:20px 0;">
+      ${weekKeys.map((wk, i) => {
+        const score = scores[i];
+        const grade = getGrade(score);
+        const height = score !== null ? Math.max(8, (score / maxScore) * 100) : 8;
+        const colorClass = grade ? grade.level : 'safe';
+        const opacity = score !== null ? 1 : 0.15;
+        return `
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="font-size:0.8rem;font-weight:700;color:${grade ? grade.color : '#999'};">${score !== null ? score : '-'}</div>
+            <div class="trend-bar ${colorClass}" style="height:${height}px;width:50px;opacity:${opacity};border-radius:6px 6px 0 0;"></div>
+            <div style="font-size:0.7rem;color:var(--muted);text-align:center;">${formatWeekLabel(wk)}</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  container.innerHTML = `
+    <div style="margin-bottom:12px;">
+      <strong>${escapeHtml(emp.name)}</strong> — 최근 4주 침묵 점수 추이
+    </div>
+    ${chartHtml}
+  `;
+}
+
+// ==================== 개입 가이드 ====================
+function renderGuide() {
+  const container = document.getElementById('guide-container');
+  const guides = [
+    {
+      level: 'safe',
+      title: '🟢 안전 (0~25점) — 정상 소통',
+      desc: '직원이 능동적으로 소통하고 있습니다. 현재 패턴을 유지하세요.',
+      script: '"이번 주도 잘 하고 있어. 특히 보고 부분이 좋았어. 다음 주도 이 리듬 유지해보자."'
+    },
+    {
+      level: 'observe',
+      title: '🟡 관찰 (26~50점) — 주의 깊게 보기',
+      desc: '소통이 다소 줄어들었습니다. 업무 부담이나 개인 상황이 있는지 살펴보세요.',
+      script: '"최근 업무가 좀 어렵지 않아? 네가 하고 있는 일에 대해 이야기 나눌 수 있을까?"'
+    },
+    {
+      level: 'intervene',
+      title: '🟠 개입 필요 (51~75점) — 1:1 면담 권장',
+      desc: '소통이 현저히 줄었습니다. 가능한 빨리 1:1 면담을 잡으세요.',
+      script: '"최근 몇 주간 네가 조용한 것 같아. 무슨 일이 있는지 이야기해줄 수 있어? 팀장으로서 도움이 필요한 부분이 있으면 말해줘."'
+    },
+    {
+      level: 'danger',
+      title: '🔴 위험 (76~100점) — 즉시 개입',
+      desc: '소통이 거의 없습니다. 즉시 개입이 필요합니다. 직원의 상태를 확인하세요.',
+      script: '"네가 최근 많이 조용해서 걱정이야. 지금 시간 괜찮아? 무슨 일이 있는지 들려줄 수 있어? 네가 겪고 있는 어려움을 함께 해결하고 싶어."'
+    }
+  ];
+
+  container.innerHTML = guides.map(g => `
+    <div class="guide-card ${g.level}">
+      <h4>${g.title}</h4>
+      <p>${g.desc}</p>
+      <div class="script">💬 ${g.script}</div>
+    </div>
+  `).join('');
+}
+
+// ==================== 탭 전환 ====================
+function switchTab(tabId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
+  document.getElementById('tab-' + tabId).classList.add('active');
+}
+
+// ==================== 유틸 ====================
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ==================== 초기화 ====================
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+});
+
+renderDashboard();
+renderRecordTab();
+renderTrendTab();
+renderGuide();
+</script>
+
+</body>
+</html>

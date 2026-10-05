@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>팀 목소리 지도 — 회의 발언 기록 & 침묵 발견</title>
+<style>
+:root {
+  --blue-900: #0d2a5c;
+  --blue-700: #1a4a9e;
+  --blue-500: #2563eb;
+  --blue-300: #60a5fa;
+  --blue-100: #dbeafe;
+  --gray-700: #374151;
+  --gray-500: #6b7280;
+  --gray-300: #d1d5db;
+  --gray-100: #f3f4f6;
+  --red-500: #ef4444;
+  --red-100: #fee2e2;
+  --green-500: #22c55e;
+  --green-100: #dcfce7;
+  --amber-500: #f59e0b;
+  --amber-100: #fef3c7;
+  --white: #ffffff;
+  --radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+  background: var(--gray-100);
+  color: var(--gray-700);
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+header {
+  background: linear-gradient(135deg, var(--blue-900), var(--blue-700));
+  color: var(--white);
+  padding: 20px 16px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+header h1 { font-size: 1.4rem; margin-bottom: 4px; }
+header p { font-size: 0.85rem; opacity: 0.85; }
+nav {
+  display: flex;
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-300);
+  position: sticky;
+  top: 76px;
+  z-index: 99;
+}
+nav button {
+  flex: 1;
+  padding: 12px 4px;
+  border: none;
+  background: none;
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+}
+nav button.active {
+  color: var(--blue-700);
+  border-bottom-color: var(--blue-700);
+  font-weight: 700;
+}
+.page { display: none; padding: 16px; max-width: 600px; margin: 0 auto; }
+.page.active { display: block; }
+.card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+.card h3 {
+  font-size: 1rem;
+  margin-bottom: 12px;
+  color: var(--blue-900);
+}
+label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--gray-700);
+}
+input, select, textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+  background: var(--white);
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--blue-500);
+  box-shadow: 0 0 0 3px var(--blue-100);
+}
+.btn {
+  display: inline-block;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.btn-primary {
+  background: var(--blue-700);
+  color: var(--white);
+  width: 100%;
+}
+.btn-primary:active { background: var(--blue-900); }
+.btn-secondary {
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+.btn-danger {
+  background: var(--red-100);
+  color: var(--red-500);
+}
+.btn-sm {
+  padding: 8px 14px;
+  font-size: 0.85rem;
+}
+.participant-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--blue-100);
+  color: var(--blue-700);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  margin: 4px;
+}
+.participant-tag .remove {
+  cursor: pointer;
+  font-weight: bold;
+  opacity: 0.6;
+}
+.participant-tag .remove:hover { opacity: 1; }
+.speak-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius);
+  background: var(--white);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 1rem;
+}
+.speak-btn:active {
+  transform: scale(0.98);
+  border-color: var(--blue-500);
+  background: var(--blue-100);
+}
+.speak-btn .count {
+  background: var(--blue-700);
+  color: var(--white);
+  min-width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.speak-btn.silent .count {
+  background: var(--gray-500);
+}
+.type-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.type-btn {
+  flex: 1;
+  min-width: 70px;
+  padding: 10px 6px;
+  border: 2px solid var(--gray-300);
+  border-radius: 8px;
+  background: var(--white);
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+.type-btn.active {
+  border-color: var(--blue-500);
+  background: var(--blue-100);
+  color: var(--blue-700);
+  font-weight: 700;
+}
+.bar-chart {
+  margin: 12px 0;
+}
+.bar-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+.bar-label {
+  width: 60px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: right;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bar-track {
+  flex: 1;
+  height: 24px;
+  background: var(--gray-100);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 12px;
+  transition: width 0.4s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  min-width: 20px;
+}
+.bar-fill span {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--white);
+}
+.bar-pct {
+  width: 44px;
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  text-align: right;
+  flex-shrink: 0;
+}
+.alert-box {
+  background: var(--red-100);
+  border-left: 4px solid var(--red-500);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.alert-box h4 {
+  color: var(--red-500);
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+.alert-box p {
+  font-size: 0.85rem;
+  color: var(--gray-700);
+}
+.suggestion-box {
+  background: var(--green-100);
+  border-left: 4px solid var(--green-500);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.suggestion-box h4 {
+  color: var(--green-500);
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+.suggestion-box p {
+  font-size: 0.85rem;
+  color: var(--gray-700);
+}
+.trend-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.trend-table th, .trend-table td {
+  padding: 8px 6px;
+  text-align: center;
+  border-bottom: 1px solid var(--gray-100);
+}
+.trend-table th {
+  background: var(--gray-100);
+  font-weight: 600;
+  color: var(--gray-700);
+}
+.trend-table .silent-cell {
+  color: var(--red-500);
+  font-weight: 700;
+}
+.trend-table .active-cell {
+  color: var(--blue-700);
+}
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--gray-500);
+}
+.empty-state .icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.stat-item {
+  background: var(--gray-100);
+  border-radius: 8px;
+  padding: 12px 8px;
+  text-align: center;
+}
+.stat-item .num {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--blue-700);
+}
+.stat-item .lbl {
+  font-size: 0.7rem;
+  color: var(--gray-500);
+  margin-top: 2px;
+}
+.meeting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid var(--gray-100);
+  cursor: pointer;
+}
+.meeting-item:last-child { border-bottom: none; }
+.meeting-item:active { background: var(--gray-100); }
+.meeting-info h4 {
+  font-size: 0.95rem;
+  color: var(--gray-700);
+}
+.meeting-info p {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin-top: 2px;
+}
+.meeting-badge {
+  background: var(--blue-100);
+  color: var(--blue-700);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.timer-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--blue-100);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+.timer-display .time {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--blue-900);
+  font-variant-numeric: tabular-nums;
+}
+.timer-display .lbl {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+}
+.fab {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--blue-700);
+  color: var(--white);
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+  z-index: 100;
+}
+.fab:active { transform: scale(0.95); }
+.divider {
+  height: 1px;
+  background: var(--gray-300);
+  margin: 16px 0;
+}
+.section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+@media (max-width: 380px) {
+  .bar-label { width: 48px; font-size: 0.75rem; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎙️ 팀 목소리 지도</h1>
+  <p>회의에서 누가 말하고 누가 침묵하는지 기록합니다</p>
+</header>
+
+<nav>
+  <button class="active" data-page="setup" onclick="showPage('setup')">회의 설정</button>
+  <button data-page="record" onclick="showPage('record')">발언 기록</button>
+  <button data-page="analysis" onclick="showPage('analysis')">분석</button>
+  <button data-page="trend" onclick="showPage('trend')">추이</button>
+</nav>
+
+<!-- 회의 설정 페이지 -->
+<div id="page-setup" class="page active">
+  <div class="card">
+    <h3>📋 회의 설정</h3>
+    <label>회의 날짜</label>
+    <input type="date" id="meeting-date">
+    <label>회의 유형</label>
+    <select id="meeting-type">
+      <option value="전체">전체 회의</option>
+      <option value="팀">팀 회의</option>
+      <option value="캐주얼">캐주얼</option>
+    </select>
+    <label>회의 제목</label>
+    <input type="text" id="meeting-title" placeholder="예: 주간 스탠드업">
+    <label>참여자 추가</label>
+    <div style="display:flex;gap:8px;">
+      <input type="text" id="participant-name" placeholder="이름 입력" style="flex:1;margin-bottom:0;">
+      <button class="btn btn-primary btn-sm" style="width:auto;" onclick="addParticipant()">추가</button>
+    </div>
+    <div id="participant-list" style="margin-top:8px;"></div>
+  </div>
+  <div class="card">
+    <h3>📁 저장된 회의</h3>
+    <div id="meeting-list"></div>
+  </div>
+  <button class="btn btn-primary" onclick="saveMeeting()">💾 회의 저장</button>
+</div>
+
+<!-- 발언 기록 페이지 -->
+<div id="page-record" class="page">
+  <div class="card">
+    <h3>⏱️ 회의 타이머</h3>
+    <div class="timer-display">
+      <div class="time" id="timer">00:00</div>
+      <div class="lbl" id="timer-status">회의 시작 전</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary" id="timer-btn" onclick="toggleTimer()" style="flex:1;">▶ 시작</button>
+      <button class="btn btn-secondary" onclick="resetTimer()" style="flex:1;">리셋</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>🎤 발언 기록</h3>
+    <div class="section-title">발언 유형 선택</div>
+    <div class="type-selector">
+      <button class="type-btn active" data-type="제안" onclick="selectType('제안')">💡 제안</button>
+      <button class="type-btn" data-type="질문" onclick="selectType('질문')">❓ 질문</button>
+      <button class="type-btn" data-type="보고" onclick="selectType('보고')">📋 보고</button>
+      <button class="type-btn" data-type="의견" onclick="selectType('의견')">💬 의견</button>
+    </div>
+    <div class="section-title">참여자 — 눌러서 기록</div>
+    <div id="speak-buttons"></div>
+  </div>
+  <div class="card">
+    <h3>📊 실시간 현황</h3>
+    <div class="stats-grid">
+      <div class="stat-item"><div class="num" id="stat-total">0</div><div class="lbl">총 발언</div></div>
+      <div class="stat-item"><div class="num" id="stat-active">0</div><div class="lbl">발언자</div></div>
+      <div class="stat-item"><div class="num" id="stat-silent">0</div><div class="lbl">침묵</div></div>
+    </div>
+    <div class="bar-chart" id="live-chart"></div>
+  </div>
+</div>
+
+<!-- 분석 페이지 -->
+<div id="page-analysis" class="page">
+  <div class="card">
+    <h3>📊 회의 분석</h3>
+    <div id="analysis-content"></div>
+  </div>
+</div>
+
+<!-- 추이 페이지 -->
+<div id="page-trend" class="page">
+  <div class="card">
+    <h3>📈 침묵 직원 추이 (최근 4주)</h3>
+    <div id="trend-content"></div>
+  </div>
+  <div class="card">
+    <h3>💡 개입 제안</h3>
+    <div id="suggestion-content"></div>
+  </div>
+</div>
+
+<button class="fab" onclick="showPage('record')">🎤</button>
+
+<script>
+// ===== 상태 관리 =====
+const STORAGE_KEY = 'teamVoiceMap';
+let state = loadState();
+let currentMeetingId = null;
+let timerInterval = null;
+let timerSeconds = 0;
+let selectedType = '제안';
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return { meetings: [], participants: [] };
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function getMeeting(id) {
+  return state.meetings.find(m => m.id === id);
+}
+
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+// ===== 페이지 네비게이션 =====
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelector(`nav button[data-page="${page}"]`).classList.add('active');
+  
+  if (page === 'setup') renderSetup();
+  if (page === 'record') renderRecord();
+  if (page === 'analysis') renderAnalysis();
+  if (page === 'trend') renderTrend();
+}
+
+// ===== 회의 설정 =====
+function addParticipant() {
+  const input = document.getElementById('participant-name');
+  const name = input.value.trim();
+  if (!name) return;
+  if (state.participants.includes(name)) {
+    alert('이미 추가된 참여자입니다.');
+    return;
+  }
+  state.participants.push(name);
+  saveState();
+  input.value = '';
+  renderParticipantList();
+}
+
+function removeParticipant(name) {
+  state.participants = state.participants.filter(p => p !== name);
+  saveState();
+  renderParticipantList();
+}
+
+function renderParticipantList() {
+  const container = document.getElementById('participant-list');
+  if (state.participants.length === 0) {
+    container.innerHTML = '<p style="font-size:0.85rem;color:var(--gray-500);">참여자를 추가하세요.</p>';
+    return;
+  }
+  container.innerHTML = state.participants.map(p => 
+    `<span class="participant-tag">${p}<span class="remove" onclick="removeParticipant('${p}')">×</span></span>`
+  ).join('');
+}
+
+function renderMeetingList() {
+  const container = document.getElementById('meeting-list');
+  if (state.meetings.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>저장된 회의가 없습니다.</p></div>';
+    return;
+  }
+  const sorted = [...state.meetings].sort((a, b) => new Date(b.date) - new Date(a.date));
+  container.innerHTML = sorted.map(m => {
+    const totalSpeaks = m.records.reduce((s, r) => s + r.count, 0);
+    const silentCount = m.participants.filter(p => !m.records.find(r => r.name === p && r.count > 0)).length;
+    return `
+      <div class="meeting-item" onclick="openMeeting('${m.id}')">
+        <div class="meeting-info">
+          <h4>${m.title || m.type + ' 회의'}</h4>
+          <p>${m.date} · ${m.participants.length}명 · 발언 ${totalSpeaks}회</p>
+        </div>
+        <span class="meeting-badge">${silentCount > 0 ? '침묵 ' + silentCount + '명' : '✓'}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function saveMeeting() {
+  const date = document.getElementById('meeting-date').value;
+  const type = document.getElementById('meeting-type').value;
+  const title = document.getElementById('meeting-title').value.trim();
+  
+  if (!date) { alert('회의 날짜를 선택하세요.'); return; }
+  if (state.participants.length === 0) { alert('참여자를 추가하세요.'); return; }
+  
+  const meeting = {
+    id: generateId(),
+    date,
+    type,
+    title: title || type + ' 회의',
+    participants: [...state.participants],
+    records: {},
+    createdAt: new Date().toISOString()
+  };
+  
+  state.participants.forEach(p => {
+    meeting.records[p] = { count: 0, types: { '제안': 0, '질문': 0, '보고': 0, '의견': 0 } };
+  });
+  
+  state.meetings.push(meeting);
+  saveState();
+  
+  document.getElementById('meeting-title').value = '';
+  alert('회의가 저장되었습니다. 발언 기록 탭으로 이동하세요.');
+  renderMeetingList();
+}
+
+function openMeeting(id) {
+  currentMeetingId = id;
+  const m = getMeeting(id);
+  if (!m) return;
+  
+  // 참여자 목록 복원
+  state.participants = [...m.participants];
+  saveState();
+  renderParticipantList();
+  
+  showPage('record');
+}
+
+// ===== 발언 기록 =====
+function selectType(type) {
+  selectedType = type;
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.type-btn[data-type="${type}"]`).classList.add('active');
+}
+
+function renderRecord() {
+  const m = currentMeetingId ? getMeeting(currentMeetingId) : null;
+  const container = document.getElementById('speak-buttons');
+  
+  if (!m) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>회의를 먼저 설정하거나 선택하세요.</p></div>';
+    document.getElementById('live-chart').innerHTML = '';
+    updateStats({});
+    return;
+  }
+  
+  container.innerHTML = m.participants.map(p => {
+    const rec = m.records[p] || { count: 0 };
+    const isSilent = rec.count === 0;
+    return `
+      <button class="speak-btn ${isSilent ? 'silent' : ''}" onclick="recordSpeak('${p}')">
+        <span>${p}</span>
+        <span class="count">${rec.count}</span>
+      </button>
+    `;
+  }).join('');
+  
+  updateLiveChart(m);
+  updateStats(m.records);
+}
+
+function recordSpeak(name) {
+  const m = getMeeting(currentMeetingId);
+  if (!m) return;
+  
+  if (!m.records[name]) {
+    m.records[name] = { count: 0, types: { '제안': 0, '질문': 0, '보고': 0, '의견': 0 } };
+  }
+  
+  m.records[name].count++;
+  m.records[name].types[selectedType]++;
+  saveState();
+  
+  // 버튼 업데이트
+  const btn = document.querySelector(`.speak-btn[onclick="recordSpeak('${name}')"]`);
+  if (btn) {
+    btn.querySelector('.count').textContent = m.records[name].count;
+    btn.classList.remove('silent');
+  }
+  
+  updateLiveChart(m);
+  updateStats(m.records);
+}
+
+function updateStats(records) {
+  const names = Object.keys(records);
+  const total = names.reduce((s, n) => s + records[n].count, 0);
+  const active = names.filter(n => records[n].count > 0).length;
+  const silent = names.filter(n => records[n].count === 0).length;
+  
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-active').textContent = active;
+  document.getElementById('stat-silent').textContent = silent;
+}
+
+function updateLiveChart(m) {
+  const container = document.getElementById('live-chart');
+  const participants = m.participants;
+  const maxCount = Math.max(...participants.map(p => (m.records[p] || {count:0}).count), 1);
+  
+  container.innerHTML = participants.map(p => {
+    const rec = m.records[p] || { count: 0 };
+    const pct = maxCount > 0 ? (rec.count / maxCount * 100) : 0;
+    const color = rec.count === 0 ? 'var(--gray-300)' : 
+                   pct > 66 ? 'var(--blue-900)' : 
+                   pct > 33 ? 'var(--blue-500)' : 'var(--blue-300)';
+    return `
+      <div class="bar-row">
+        <div class="bar-label">${p}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%;background:${color};">
+            ${rec.count > 0 ? `<span>${rec.count}</span>` : ''}
+          </div>
+        </div>
+        <div class="bar-pct">${rec.count}회</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ===== 타이머 =====
+function toggleTimer() {
+  const btn = document.getElementById('timer-btn');
+  const status = document.getElementById('timer-status');
+  
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    btn.textContent = '▶ 시작';
+    status.textContent = '일시정지됨';
+  } else {
+    timerInterval = setInterval(() => {
+      timerSeconds++;
+      const min = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+      const sec = String(timerSeconds % 60).padStart(2, '0');
+      document.getElementById('timer').textContent = `${min}:${sec}`;
+    }, 1000);
+    btn.textContent = '⏸ 정지';
+    status.textContent = '회의 진행 중';
+  }
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerSeconds = 0;
+  document.getElementById('timer').textContent = '00:00';
+  document.getElementById('timer-btn').textContent = '▶ 시작';
+  document.getElementById('timer-status').textContent = '회의 시작 전';
+}
+
+// ===== 분석 =====
+function renderAnalysis() {
+  const container = document.getElementById('analysis-content');
+  const m = currentMeetingId ? getMeeting(currentMeetingId) : null;
+  
+  if (!m) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📊</div><p>분석할 회의가 없습니다.</p></div>';
+    return;
+  }
+  
+  const participants = m.participants;
+  const totalSpeaks = participants.reduce((s, p) => s + (m.records[p] || {count:0}).count, 0);
+  const silentMembers = participants.filter(p => !m.records[p] || m.records[p].count === 0);
+  const lowMembers = participants.filter(p => m.records[p] && m.records[p].count > 0 && m.records[p].count <= 1);
+  
+  // 순위 계산
+  const ranked = participants.map(p => {
+    const rec = m.records[p] || { count: 0, types: { '제안': 0, '질문': 0, '보고': 0, '의견': 0 } };
+    return { name: p, count: rec.count, pct: totalSpeaks > 0 ? (rec.count / totalSpeaks * 100).toFixed(1) : 0, types: rec.types };
+  }).sort((a, b) => b.count - a.count);
+  
+  let html = `
+    <div class="stats-grid">
+      <div class="stat-item"><div class="num">${participants.length}</div><div class="lbl">참여자</div></div>
+      <div class="stat-item"><div class="num">${totalSpeaks}</div><div class="lbl">총 발언</div></div>
+      <div class="stat-item"><div class="num">${silentMembers.length}</div><div class="lbl">침묵</div></div>
+    </div>
+  `;
+  
+  // 침묵 알림
+  if (silentMembers.length > 0) {
+    html += `
+      <div class="alert-box">
+        <h4>🔇 침묵 직원 발견</h4>
+        <p>이번 회의에서 <strong>${silentMembers.join(', ')}</strong>님이 한 번도 말하지 않았습니다.</p>
+      </div>
+    `;
+  }
+  
+  if (lowMembers.length > 0) {
+    html += `
+      <div class="alert-box" style="background:var(--amber-100);border-left-color:var(--amber-500);">
+        <h4 style="color:var(--amber-500);">⚠️ 발언 부족</h4>
+        <p><strong>${lowMembers.join(', ')}</strong>님이 1회 이하로 발언했습니다.</p>
+      </div>
+    `;
+  }
+  
+  // 순위표
+  html += '<div class="section-title">발언 점유율 순위</div>';
+  html += '<div class="bar-chart">';
+  const maxCount = Math.max(...ranked.map(r => r.count), 1);
+  ranked.forEach((r, i) => {
+    const pct = maxCount > 0 ? (r.count / maxCount * 100) : 0;
+    const color = r.count === 0 ? 'var(--gray-300)' : 
+                   pct > 66 ? 'var(--blue-900)' : 
+                   pct > 33 ? 'var(--blue-500)' : 'var(--blue-300)';
+    const medal = i === 0 && r.count > 0 ? '🥇' : i === 1 && r.count > 0 ? '🥈' : i === 2 && r.count > 0 ? '🥉' : '';
+    html += `
+      <div class="bar-row">
+        <div class="bar-label">${medal} ${r.name}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%;background:${color};">
+            ${r.count > 0 ? `<span>${r.count}</span>` : ''}
+          </div>
+        </div>
+        <div class="bar-pct">${r.pct}%</div>
+      </div>
+    `;
+  });
+  html += '</div>';
+  
+  // 발언 유형별 통계
+  html += '<div class="divider"></div>';
+  html += '<div class="section-title">발언 유형별 통계</div>';
+  const typeTotals = { '제안': 0, '질문': 0, '보고': 0, '의견': 0 };
+  participants.forEach(p => {
+    const rec = m.records[p];
+    if (rec) {
+      Object.keys(typeTotals).forEach(t => typeTotals[t] += rec.types[t]);
+    }
+  });
+  const typeMax = Math.max(...Object.values(typeTotals), 1);
+  Object.entries(typeTotals).forEach(([type, count]) => {
+    const pct = typeMax > 0 ? (count / typeMax * 100) : 0;
+    const icons = { '제안': '💡', '질문': '❓', '보고': '📋', '의견': '💬' };
+    html += `
+      <div class="bar-row">
+        <div class="bar-label">${icons[type]} ${type}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%;background:var(--blue-500);">
+            ${count > 0 ? `<span>${count}</span>` : ''}
+          </div>
+        </div>
+        <div class="bar-pct">${count}회</div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+// ===== 추이 =====
+function renderTrend() {
+  const container = document.getElementById('trend-content');
+  const suggestionContainer = document.getElementById('suggestion-content');
+  
+  if (state.meetings.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📈</div><p>추이를 볼 회의 데이터가 없습니다.</p></div>';
+    suggestionContainer.innerHTML = '';
+    return;
+  }
+  
+  // 최근 4개 회의
+  const sorted = [...state.meetings].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const recent = sorted.slice(0, 4);
+  
+  // 전체 참여자 목록
+  const allParticipants = [...new Set(recent.flatMap(m => m.participants))];
+  
+  // 추이 테이블
+  let tableHtml = '<table class="trend-table"><thead><tr><th>참여자</th>';
+  recent.forEach(m => {
+    const d = new Date(m.date);
+    tableHtml += `<th>${d.getMonth()+1}/${d.getDate()}</th>`;
+  });
+  tableHtml += '</tr></thead><tbody>';
+  
+  allParticipants.forEach(p => {
+    tableHtml += `<tr><td style="text-align:left;font-weight:600;">${p}</td>`;
+    recent.forEach(m => {
+      const rec = m.records[p];
+      const count = rec ? rec.count : 0;
+      const cls = count === 0 ? 'silent-cell' : 'active-cell';
+      tableHtml += `<td class="${cls}">${count}</td>`;
+    });
+    tableHtml += '</tr>';
+  });
+  tableHtml += '</tbody></table>';
+  
+  container.innerHTML = tableHtml;
+  
+  // 개입 제안: 가장 최근 회의에서 침묵한 직원
+  const latest = recent[0];
+  if (latest) {
+    const silent = latest.participants.filter(p => !latest.records[p] || latest.records[p].count === 0);
+    if (silent.length > 0) {
+      const suggestions = silent.map(name => {
+        const questions = [
+          `${name}님, 이번 주제에 대해 어떻게 생각하시나요?`,
+          `${name}님의 의견을 들어보고 싶습니다.`,
+          `${name}님, 이 부분에 대해 경험이나 아이디어가 있으신가요?`,
+          `다음 회의에서 ${name}님께 먼저 여쭤보겠습니다.`,
+          `${name}님, 조용히 계시지만 기다리고 있겠습니다 😊`
+        ];
+        const q = questions[Math.floor(Math.random() * questions.length)];
+        return `<div class="suggestion-box"><h4>🎯 ${name}님께</h4><p>"${q}"</p></div>`;
+      });
+      suggestionContainer.innerHTML = suggestions.join('');
+    } else {
+      suggestionContainer.innerHTML = '<div class="suggestion-box"><h4>✅ 모두 발언했습니다</h4><p>이번 회의에서는 모든 참여자가 발언했습니다. 훌륭합니다!</p></div>';
+    }
+  }
+}
+
+// ===== 초기화 =====
+function renderSetup() {
+  // 오늘 날짜 기본값
+  const dateInput = document.getElementById('meeting-date');
+  if (!dateInput.value) {
+    const today = new Date();
+    const offset = today.getTimezoneOffset() * 60000;
+    const local = new Date(today - offset).toISOString().split('T')[0];
+    dateInput.value = local;
+  }
+  renderParticipantList();
+  renderMeetingList();
+}
+
+// 첫 로드
+renderSetup();
+</script>
+</body>
+</html>
