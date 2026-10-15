@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>압박 면접 연습기</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #333; min-height: 100vh; }
+.container { max-width: 800px; margin: 0 auto; padding: 20px; }
+h1 { text-align: center; margin-bottom: 20px; color: #2c3e50; font-size: 1.8em; }
+.setup-section { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.setup-section label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
+.setup-section select, .setup-section input { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; margin-bottom: 12px; }
+.setup-section select:focus, .setup-section input:focus { outline: none; border-color: #e67e22; }
+.btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+.btn-primary { background: #e67e22; color: #fff; }
+.btn-primary:hover { background: #d35400; }
+.btn-secondary { background: #3498db; color: #fff; }
+.btn-secondary:hover { background: #2980b9; }
+.btn-success { background: #27ae60; color: #fff; }
+.btn-success:hover { background: #219a52; }
+.btn-group { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.practice-section { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.question-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 20px; border-radius: 12px; margin-bottom: 15px; }
+.question-card h3 { margin-bottom: 8px; font-size: 1.1em; }
+.question-card p { font-size: 1.2em; line-height: 1.5; }
+.followup-card { background: #fff3cd; border-left: 4px solid #f39c12; padding: 15px; border-radius: 0 8px 8px 0; margin-bottom: 12px; }
+.followup-card .followup-label { font-size: 12px; font-weight: 700; color: #d68910; margin-bottom: 4px; }
+.followup-card .followup-text { font-size: 14px; color: #856404; }
+.answer-section { margin-top: 15px; }
+.answer-section textarea { width: 100%; min-height: 120px; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; resize: vertical; font-family: inherit; }
+.answer-section textarea:focus { outline: none; border-color: #e67e22; }
+.feedback-section { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.feedback-section h3 { margin-bottom: 12px; color: #2c3e50; }
+.feedback-item { padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; font-size: 14px; }
+.feedback-warning { background: #fde8e8; color: #c0392b; }
+.feedback-success { background: #d4efdf; color: #1e8449; }
+.feedback-info { background: #d6eaf8; color: #2471a3; }
+.history-section { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.history-section h3 { margin-bottom: 12px; color: #2c3e50; }
+.history-item { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+.history-item:last-child { border-bottom: none; }
+.history-date { color: #95a5a6; font-size: 12px; }
+.progress-indicator { display: flex; gap: 5px; margin-bottom: 15px; }
+.progress-dot { width: 12px; height: 12px; border-radius: 50%; background: #ecf0f1; }
+.progress-dot.active { background: #e67e22; }
+.progress-dot.completed { background: #27ae60; }
+.empty-state { text-align: center; padding: 40px; color: #95a5a6; }
+@media (max-width: 600px) { .container { padding: 10px; } h1 { font-size: 1.4em; } .btn-group { flex-direction: column; } .btn { width: 100%; } }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🎤 압박 면접 연습기</h1>
+
+<div class="setup-section" id="setupSection">
+<label for="jobSelect">직무 선택</label>
+<select id="jobSelect">
+<option value="dev">개발자</option>
+<option value="design">디자이너</option>
+<option value="pm">기획자/PM</option>
+<option value="marketing">마케터</option>
+<option value="sales">영업</option>
+<option value="etc">기타</option>
+</select>
+<label for="careerInput">경력 연차</label>
+<input type="number" id="careerInput" min="0" max="30" value="3" placeholder="경력 연차">
+<div class="btn-group">
+<button class="btn btn-primary" onclick="startPractice()">연습 시작</button>
+<button class="btn btn-secondary" onclick="showHistory()">연습 기록 보기</button>
+</div>
+</div>
+
+<div class="practice-section" id="practiceSection" style="display:none;">
+<div class="progress-indicator" id="progressIndicator"></div>
+<div class="question-card" id="questionCard"></div>
+<div id="followupContainer"></div>
+<div class="answer-section">
+<textarea id="answerInput" placeholder="답변을 입력하세요..."></textarea>
+<div class="btn-group">
+<button class="btn btn-primary" onclick="submitAnswer()">답변 제출</button>
+<button class="btn btn-secondary" onclick="nextQuestion()">다음 질문</button>
+<button class="btn btn-success" onclick="endPractice()">연습 종료</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-section" id="feedbackSection" style="display:none;">
+<h3>💬 피드백</h3>
+<div id="feedbackContainer"></div>
+</div>
+
+<div class="history-section" id="historySection" style="display:none;">
+<h3>📋 연습 기록</h3>
+<div id="historyContainer"></div>
+</div>
+</div>
+
+<script>
+const STORAGE_KEY = 'interview-pressure-trainer-history';
+
+const questionSets = {
+dev: [
+{ q: "자신이 가장 자신 있는 기술 스택은 무엇이며, 그 이유는?", followups: ["그 기술을 사용해 구체적으로 어떤 문제를 해결했나요?", "해당 기술의 한계점은 무엇이라고 생각하나요?", "새로운 기술을 배울 때 어떤 방식으로 학습하나요?"] },
+{ q: "팀 프로젝트에서 갈등이 생겼을 때 어떻게 해결했나요?", followups: ["갈등의 구체적인 원인이 무엇이었나요?", "본인이 갈등에 기여한 부분은 없나요?", "다시 같은 상황이 온다면 어떻게 다르게 대처하시겠습니까?"] },
+{ q: "코드 리뷰에서 비판을 받았을 때 어떻게 대응하나요?", followups: ["구체적으로 어떤 비판을 받았나요?", "비판이 타당하지 않다고 생각든 경우는 어떻게 했나요?", "리뷰어의 피드백을 실제로 반영한 사례를 들어주세요."] },
+{ q: "마감일이 임박했는데 기능이 완성되지 않았다면?", followups: "어떤 기능을 우선순위에서 낮추시겠습니까?", "팀원들에게 어떻게 상황을 전달하시겠습니까?", "이런 상황을 방지하기 위해 평소에 어떻게 관리하시나요?" },
+{ q: "선임 개발자의 코드가 마음에 들지 않을 때?", followups: ["어떤 부분이 마음에 들지 않았나요?", "직접 수정한 경험이 있나요?", "수정하지 않고 그대로 사용한 경우도 있나요?"] }
+],
+design: [
+{ q: "디자인 결정을 내릴 때 가장 중요하게 생각하는 기준은?", followups: ["그 기준을 정량적으로 평가하는 방법이 있나요?", "사용자 의견과 디자이너 의견이 충돌하면?", "데이터와 직관이 어긋나는 경우는 어떻게 하시나요?"] },
+{ q: "클라이언트가 디자인을 거절했을 때 대처 방법은?", followups: ["거절의 구체적인 이유가 무엇이었나요?", "거절당한 디자인을 수정한 사례를 들어주세요.", "같은 디자인을 다시 제안한 적이 있나요?"] },
+{ q: "트렌드를 따르는 것과 브랜드 일관성 사이의 균형은?", followups: ["트렌드를 무시한 프로젝트가 있나요?", "브랜드 가이드라인을 만든 경험이 있나요?", "트렌드가 지나간 후 디자인을 어떻게 관리하나요?"] },
+{ q: "피드백을 받고 디자인을 수정하는 과정에서 가장 어려운 점은?", followups: ["수정이 많아지면 원래 컨셉을 잃은 적이 있나요?", "어떤 피드백이 가장 도움이 되었나요?", "피드백을 거절한 경험이 있나요?"] }
+],
+pm: [
+{ q: "프로젝트 일정이 지연될 때 어떻게 관리하나요?", followups: ["지연의 원인을 어떻게 분석하나요?", "이해관계자에게 어떻게 소통하시나요?", "일정을 단축하기 위해 어떤 방법을 쓰시나요?"] },
+{ q: "개발자와 디자이너 사이의 갈등을 어떻게 중재하나요?", followups: ["갈등의 구체적인 사례를 들어주세요.", "중재에 실패한 경우도 있나요?", "예방하기 위해 어떤 프로세스를 도입하셨나요?"] },
+{ q: "요구사항이 계속 변경될 때 어떻게 대응하나요?", followups: ["변경 요청을 거절한 경험이 있나요?", "변경 사항을 문서화하는 방법은?", "우선순위를 어떻게 정하시나요?"] },
+{ q: "프로젝트 실패 경험이 있다면 무엇이었나요?", followups: ["실패의 원인은 무엇이었나요?", "본인의 잘못은 무엇이었나요?", "그 경험을 통해 무엇을 배우셨나요?"] }
+],
+marketing: [
+{ q: "마케팅 캠페인의 성과를 어떻게 측정하나요?", followups: ["ROI 계산 방식을 구체적으로 설명해주세요.", "성과가 좋지 않았을 때 어떻게 대응하시나요?", "A/B 테스트를 설계한 경험을 들어주세요."] },
+{ q: "예산이 절반으로 줄어든다면 어떻게 하시겠습니까?", followups: ["어떤 채널을 우선순위에서 낮추시겠습니까?", "저비용 고효율 전략을 제안해주세요.", "예산 삭감을 방지하기 위해 어떻게 소통하시나요?"] },
+{ q: "경쟁사가 유사한 캠페인을 시작했다면?", followups: ["차별화 포인트는 무엇인가요?", "가격 전략을 어떻게 조정하시겠습니까?", "경쟁사 분석을 어떻게 하시나요?"] },
+{ q: "타겟 고객층을 잘못 설정한 경험이 있나요?", followups: ["어떻게 오류를 발견했나요?", "수정하는 데 얼마나 걸렸나요?", "같은 실수를 방지하기 위해 어떤 시스템을 만들었나요?"] }
+],
+sales: [
+{ q: "장기간 거래처가 갑자기 계약을 취소한다면?", followups: ["취소 원인을 어떻게 파악하시나요?", "복구하기 위해 어떤 전략을 쓰시나요?", "복구하지 못한 경우는 어떻게 처리하시나요?"] },
+{ q: "경쟁사보다 가격이 비싸다는 지적을 받으면?", followups: ["가격 대비 가치를 어떻게 설명하시나요?", "할인 없이 성사시킨 사례를 들어주세요.", "가격 협상에서 가장 중요한 것은 무엇인가요?"] },
+{ q: "영업 목표를 달성하지 못했을 때 스스로 어떻게 평가하나요?", followups: ["미달의 원인을 어떻게 분석하시나요?", "다음 분기 전략을 어떻게 수정하시나요?", "팀원들에게 어떻게 소통하시나요?"] },
+{ q: "신규 고객을 개발하는 데 가장 효과적인 방법은?", followups: ["콜드콜 성공률을 높인 비결이 있나요?", "거절당한 고객을 다시 설득한 경험이 있나요?", "영업 프로세스를 어떻게 체계화하시나요?"] }
+],
+etc: [
+{ q: "이 직무에 지원한 이유는 무엇인가요?", followups: ["이 직무에 대한 이해는 어느 정도인가요?", "다른 직무와 비교했을 때 왜 이 직무인가요?", "5년 후 이 분야에서 어떤 전문가가 되고 싶나요?"] },
+{ q: "자신의 강점과 약점을 말해주세요.", followups: ["약점을 보완하기 위해 어떤 노력을 하고 있나요?", "강점이 실제로 도움이 되었던 사례를 들어주세요.", "약점 때문에 실패한 경험이 있나요?"] },
+{ q: "우리 회사에 대해 어떻게 알고 계신가요?", followups: ["회사의 경쟁사와 차이점은 무엇이라고 생각하시나요?", "회사의 약점은 무엇이라고 생각하시나요?", "입사 후 회사에 어떤 기여를 하고 싶나요?"] },
+{ q: "연봉 협상은 어떻게 하시겠습니까?", followups: ["현재 연봉 대비 기대하는 이유는?", "협상이 결렬되면 어떻게 하시겠습니까?", "연봉 외에 중요하게 생각하는 복지는?"] }
+]
+};
+
+let currentQuestions = [];
+let currentQuestionIndex = 0;
+let currentFollowupIndex = 0;
+let practiceHistory = [];
+
+function loadHistory() {
+try { practiceHistory = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+catch { practiceHistory = []; }
+}
+
+function saveHistory() {
+localStorage.setItem(STORAGE_KEY, JSON.stringify(practiceHistory));
+}
+
+function startPractice() {
+const job = document.getElementById('jobSelect').value;
+const career = document.getElementById('careerInput').value || 0;
+
+currentQuestions = questionSets[job] || questionSets.etc;
+currentQuestionIndex = 0;
+currentFollowupIndex = 0;
+
+document.getElementById('setupSection').style.display = 'none';
+document.getElementById('practiceSection').style.display = 'block';
+document.getElementById('feedbackSection').style.display = 'none';
+document.getElementById('historySection').style.display = 'none';
+
+showQuestion();
+}
+
+function showQuestion() {
+const q = currentQuestions[currentQuestionIndex];
+document.getElementById('questionCard').innerHTML = `
+<h3>질문 ${currentQuestionIndex + 1}/${currentQuestions.length}</h3>
+<p>${q.q}</p>
+`;
+document.getElementById('followupContainer').innerHTML = '';
+document.getElementById('answerInput').value = '';
+document.getElementById('feedbackSection').style.display = 'none';
+updateProgress();
+}
+
+function updateProgress() {
+const container = document.getElementById('progressIndicator');
+let html = '';
+for (let i = 0; i < currentQuestions.length; i++) {
+let cls = '';
+if (i < currentQuestionIndex) cls = 'completed';
+else if (i === currentQuestionIndex) cls = 'active';
+html += `<div class="progress-dot ${cls}"></div>`;
+}
+container.innerHTML = html;
+}
+
+function submitAnswer() {
+const answer = document.getElementById('answerInput').value.trim();
+if (!answer) { alert('답변을 입력해주세요.'); return; }
+
+const feedback = analyzeAnswer(answer);
+showFeedback(feedback);
+
+// 현재 질문의 꼬리질문이 남아있으면 표시
+const q = currentQuestions[currentQuestionIndex];
+if (currentFollowupIndex < q.followups.length) {
+const followup = q.followups[currentFollowupIndex];
+currentFollowupIndex++;
+document.getElementById('followupContainer').innerHTML = `
+<div class="followup-card">
+<div class="followup-label">🔥 꼬리질문 ${currentFollowupIndex}/${q.followups.length}</div>
+<div class="followup-text">${followup}</div>
+</div>
+`;
+}
+
+// 기록 저장
+practiceHistory.push({
+date: new Date().toLocaleString('ko-KR'),
+question: q.q,
+answer: answer,
+feedback: feedback
+});
+saveHistory();
+}
+
+function analyzeAnswer(answer) {
+const feedback = [];
+const length = answer.length;
+
+// 길이 체크
+if (length < 50) {
+feedback.push({ type: 'warning', text: '답변이 너무 짧습니다. 더 구체적으로 설명해주세요.' });
+} else if (length > 500) {
+feedback.push({ type: 'info', text: '답변이 깁니다. 핵심을 간결하게 전달하는 연습도 필요합니다.' });
+} else {
+feedback.push({ type: 'success', text: '적절한 답변 길이입니다.' });
+}
+
+// 숫자 포함 여부
+if (!/\d/.test(answer)) {
+feedback.push({ type: 'warning', text: '숫자가 포함되어 있지 않습니다. 구체적인 수치(%, 개수, 기간 등)를 포함하면 더 설득력 있습니다.' });
+} else {
+feedback.push({ type: 'success', text: '구체적인 숫자를 포함하고 있어 좋습니다.' });
+}
+
+// 추상적 표현 감지
+const abstractWords = ['좋다', '나쁘다', '중요하다', '필요하다', '하다', '있다', '없다', '그런저런', '뭐 그런', '대충', '그냥'];
+const foundAbstract = abstractWords.filter(w => answer.includes(w));
+if (foundAbstract.length > 2) {
+feedback.push({ type: 'warning', text: `추상적 표현이 많습니다: "${foundAbstract.join(', ')}". 구체적인 사례나 행동으로 대체해보세요.` });
+}
+
+// 구체적 표현 감지
+const concreteWords = ['예를 들어', '구체적으로', '사례', '경험', '프로젝트', '결과', '성과', '달성', '개선', '해결'];
+const foundConcrete = concreteWords.filter(w => answer.includes(w));
+if (foundConcrete.length > 0) {
+feedback.push({ type: 'success', text: `구체적 표현을 잘 사용하고 있습니다: "${foundConcrete.join(', ')}"` });
+}
+
+// 구조화 체크
+if (answer.includes('첫째') || answer.includes('둘째') || answer.includes('셋째') || answer.includes('1.') || answer.includes('2.')) {
+feedback.push({ type: 'success', text: '답변이 잘 구조화되어 있습니다.' });
+}
+
+// 감정 표현 감지
+const emotionWords = ['화가', '짜증', '불안', '걱정', '두려움', '스트레스'];
+const foundEmotion = emotionWords.filter(w => answer.includes(w));
+if (foundEmotion.length > 0) {
+feedback.push({ type: 'info', text: `감정 표현이 감지되었습니다: "${foundEmotion.join(', ')}". 면접에서는 감정을 객관적으로 서술하는 것이 좋습니다.` });
+}
+
+return feedback;
+}
+
+function showFeedback(feedback) {
+const container = document.getElementById('feedbackContainer');
+container.innerHTML = feedback.map(f => `
+<div class="feedback-item feedback-${f.type}">${f.text}</div>
+`).join('');
+document.getElementById('feedbackSection').style.display = 'block';
+}
+
+function nextQuestion() {
+currentQuestionIndex++;
+currentFollowupIndex = 0;
+if (currentQuestionIndex >= currentQuestions.length) {
+alert('모든 질문을 완료했습니다!');
+endPractice();
+return;
+}
+showQuestion();
+}
+
+function endPractice() {
+document.getElementById('setupSection').style.display = 'block';
+document.getElementById('practiceSection').style.display = 'none';
+document.getElementById('feedbackSection').style.display = 'none';
+document.getElementById('historySection').style.display = 'none';
+}
+
+function showHistory() {
+loadHistory();
+const container = document.getElementById('historyContainer');
+if (practiceHistory.length === 0) {
+container.innerHTML = '<div class="empty-state">연습 기록이 없습니다.</div>';
+} else {
+container.innerHTML = practiceHistory.slice().reverse().map(h => `
+<div class="history-item">
+<div class="history-date">${h.date}</div>
+<div><strong>Q:</strong> ${escapeHtml(h.question)}</div>
+<div><strong>A:</strong> ${escapeHtml(h.answer.substring(0, 100))}${h.answer.length > 100 ? '...' : ''}</div>
+</div>
+`).join('');
+}
+document.getElementById('historySection').style.display = 'block';
+}
+
+function escapeHtml(text) {
+const div = document.createElement('div');
+div.textContent = text;
+return div.innerHTML;
+}
+
+loadHistory();
+</script>
+</body>
+</html>

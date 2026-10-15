@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우선순위 정리기</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #333; min-height: 100vh; }
+.container { max-width: 800px; margin: 0 auto; padding: 20px; }
+h1 { text-align: center; margin-bottom: 20px; color: #2c3e50; font-size: 1.8em; }
+.input-section { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+textarea { width: 100%; min-height: 120px; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; resize: vertical; font-family: inherit; }
+textarea:focus { outline: none; border-color: #3498db; }
+.btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+.btn-primary { background: #3498db; color: #fff; }
+.btn-primary:hover { background: #2980b9; }
+.btn-secondary { background: #95a5a6; color: #fff; }
+.btn-secondary:hover { background: #7f8c8d; }
+.btn-danger { background: #e74c3c; color: #fff; }
+.btn-danger:hover { background: #c0392b; }
+.btn-group { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.progress-bar { background: #ecf0f1; border-radius: 10px; height: 20px; margin: 15px 0; overflow: hidden; }
+.progress-fill { background: linear-gradient(90deg, #27ae60, #2ecc71); height: 100%; border-radius: 10px; transition: width 0.3s; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 600; }
+.group-section { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.group-title { font-size: 1.1em; font-weight: 700; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #ecf0f1; display: flex; align-items: center; gap: 8px; }
+.group-now .group-title { color: #e74c3c; border-color: #e74c3c; }
+.group-today .group-title { color: #f39c12; border-color: #f39c12; }
+.group-later .group-title { color: #95a5a6; border-color: #95a5a6; }
+.top3-section { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(102,126,234,0.4); }
+.top3-section h2 { margin-bottom: 12px; font-size: 1.2em; }
+.top3-item { background: rgba(255,255,255,0.15); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-weight: 500; }
+.task-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #f0f0f0; transition: background 0.2s; }
+.task-item:hover { background: #f8f9fa; }
+.task-item:last-child { border-bottom: none; }
+.task-checkbox { width: 20px; height: 20px; cursor: pointer; accent-color: #27ae60; }
+.task-text { flex: 1; font-size: 14px; }
+.task-text.completed { text-decoration: line-through; color: #95a5a6; }
+.deadline-select { padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+.delete-btn { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 16px; padding: 4px; }
+.delete-btn:hover { color: #c0392b; }
+.empty-state { text-align: center; padding: 30px; color: #95a5a6; font-size: 14px; }
+.stats { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+.stat-card { flex: 1; min-width: 120px; background: #fff; padding: 15px; border-radius: 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.stat-number { font-size: 1.8em; font-weight: 700; color: #2c3e50; }
+.stat-label { font-size: 12px; color: #7f8c8d; margin-top: 4px; }
+@media (max-width: 600px) { .container { padding: 10px; } h1 { font-size: 1.4em; } .btn-group { flex-direction: column; } .btn { width: 100%; } }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🎯 우선순위 정리기</h1>
+
+<div class="input-section">
+<textarea id="taskInput" placeholder="할 일을 한 줄씩 입력하세요.&#10;예:&#10;보고서 작성&#10;이메일 확인&#10;프로젝트 계획 수립"></textarea>
+<div class="btn-group">
+<button class="btn btn-primary" onclick="addTasks()">할 일 추가</button>
+<button class="btn btn-secondary" onclick="clearAll()">전체 삭제</button>
+</div>
+</div>
+
+<div class="stats" id="statsSection"></div>
+
+<div class="progress-bar" id="progressBar" style="display:none;">
+<div class="progress-fill" id="progressFill">0%</div>
+</div>
+
+<div class="top3-section" id="top3Section" style="display:none;">
+<h2>🔥 오늘 먼저 할 3개</h2>
+<div id="top3List"></div>
+</div>
+
+<div id="groupsContainer"></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'priority-sorter-tasks';
+
+function loadTasks() {
+try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+catch { return []; }
+}
+
+function saveTasks(tasks) {
+localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+}
+
+function addTasks() {
+const input = document.getElementById('taskInput');
+const lines = input.value.split('\n').map(l => l.trim()).filter(l => l);
+if (lines.length === 0) { alert('할 일을 입력해주세요.'); return; }
+
+const tasks = loadTasks();
+const now = Date.now();
+lines.forEach((line, i) => {
+tasks.push({ id: now + i, text: line, deadline: 'thisweek', completed: false, createdAt: now });
+});
+saveTasks(tasks);
+input.value = '';
+render();
+}
+
+function toggleTask(id) {
+const tasks = loadTasks();
+const task = tasks.find(t => t.id === id);
+if (task) { task.completed = !task.completed; saveTasks(tasks); render(); }
+}
+
+function deleteTask(id) {
+if (!confirm('삭제하시겠습니까?')) return;
+const tasks = loadTasks().filter(t => t.id !== id);
+saveTasks(tasks);
+render();
+}
+
+function updateDeadline(id, deadline) {
+const tasks = loadTasks();
+const task = tasks.find(t => t.id === id);
+if (task) { task.deadline = deadline; saveTasks(tasks); render(); }
+}
+
+function clearAll() {
+if (!confirm('모든 할 일을 삭제하시겠습니까?')) return;
+localStorage.removeItem(STORAGE_KEY);
+render();
+}
+
+function getGroup(tasks, group) {
+return tasks.filter(t => {
+if (group === 'now') return t.deadline === 'today' && !t.completed;
+if (group === 'today') return t.deadline === 'thisweek' && !t.completed;
+if (group === 'later') return t.deadline === 'later' || t.completed;
+return false;
+});
+}
+
+function getTop3(tasks) {
+const todayTasks = tasks.filter(t => t.deadline === 'today' && !t.completed);
+const weekTasks = tasks.filter(t => t.deadline === 'thisweek' && !t.completed);
+return [...todayTasks, ...weekTasks].slice(0, 3);
+}
+
+function render() {
+const tasks = loadTasks();
+const total = tasks.length;
+const completed = tasks.filter(t => t.completed).length;
+const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+// Stats
+const statsHtml = `
+<div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">전체</div></div>
+<div class="stat-card"><div class="stat-number">${completed}</div><div class="stat-label">완료</div></div>
+<div class="stat-card"><div class="stat-number">${total - completed}</div><div class="stat-label">남음</div></div>
+<div class="stat-card"><div class="stat-number">${progress}%</div><div class="stat-label">진행률</div></div>
+`;
+document.getElementById('statsSection').innerHTML = statsHtml;
+
+// Progress bar
+const progressBar = document.getElementById('progressBar');
+if (total > 0) {
+progressBar.style.display = 'block';
+document.getElementById('progressFill').style.width = progress + '%';
+document.getElementById('progressFill').textContent = progress + '%';
+} else {
+progressBar.style.display = 'none';
+}
+
+// Top 3
+const top3 = getTop3(tasks);
+const top3Section = document.getElementById('top3Section');
+if (top3.length > 0) {
+top3Section.style.display = 'block';
+document.getElementById('top3List').innerHTML = top3.map(t =>
+`<div class="top3-item">${escapeHtml(t.text)}</div>`
+).join('');
+} else {
+top3Section.style.display = 'none';
+}
+
+// Groups
+const groups = [
+{ key: 'now', label: '🔴 지금', class: 'group-now' },
+{ key: 'today', label: '🟡 오늘 안', class: 'group-today' },
+{ key: 'later', label: '⚪ 미루기', class: 'group-later' }
+];
+
+let groupsHtml = '';
+groups.forEach(g => {
+const groupTasks = getGroup(tasks, g.key);
+groupsHtml += `<div class="group-section ${g.class}">
+<div class="group-title">${g.label} (${groupTasks.length})</div>`;
+if (groupTasks.length === 0) {
+groupsHtml += '<div class="empty-state">할 일이 없습니다.</div>';
+} else {
+groupsHtml += groupTasks.map(t => `
+<div class="task-item">
+<input type="checkbox" class="task-checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTask(${t.id})">
+<span class="task-text ${t.completed ? 'completed' : ''}">${escapeHtml(t.text)}</span>
+<select class="deadline-select" onchange="updateDeadline(${t.id}, this.value)">
+<option value="today" ${t.deadline === 'today' ? 'selected' : ''}>오늘</option>
+<option value="thisweek" ${t.deadline === 'thisweek' ? 'selected' : ''}>이번주</option>
+<option value="later" ${t.deadline === 'later' ? 'selected' : ''}>나중</option>
+</select>
+<button class="delete-btn" onclick="deleteTask(${t.id})">✕</button>
+</div>
+`).join('');
+}
+groupsHtml += '</div>';
+});
+
+document.getElementById('groupsContainer').innerHTML = groupsHtml;
+}
+
+function escapeHtml(text) {
+const div = document.createElement('div');
+div.textContent = text;
+return div.innerHTML;
+}
+
+// Enter key to add
+document.getElementById('taskInput').addEventListener('keydown', function(e) {
+if (e.key === 'Enter' && e.ctrlKey) { addTasks(); }
+});
+
+render();
+</script>
+</body>
+</html>
